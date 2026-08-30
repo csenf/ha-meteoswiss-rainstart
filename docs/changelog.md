@@ -4,6 +4,7 @@ Public history starts at **v0.2.0** (`chore: public root at v0.2.0`). Older Gite
 
 | Date | Change |
 |------|--------|
+| 2026-08-30 | Fix: Lovelace auto-registration checked a non-existent `lovelace.mode` attribute (the real field is `resource_mode`), so the resource was never created on any install regardless of dashboard mode; also load the resources collection before inspecting it instead of guessing via a sleep-poll loop |
 | 2026-08-30 | Removed v1 config-entry migration and legacy (unslugged) entity-id support; no installs predate the public v0.2.0 root, so `_legacy_entity_id` and the coordinate-label fallback name were dead code |
 | 2026-08-30 | Fix: Lovelace card now auto-registers as a resource in storage-mode dashboards; previously only the static JS was served, so the card never appeared without a manual Resources entry |
 | 2026-08-30 | Gitea pulls public GitHub after promote (no `GITEA_PUSH_URL` on GitHub) |

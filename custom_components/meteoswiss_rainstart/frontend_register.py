@@ -9,7 +9,6 @@ default and covers most installs.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from pathlib import Path
 from typing import Any
@@ -23,9 +22,6 @@ _LOGGER = logging.getLogger(__name__)
 
 CARD_FILENAME = "rainstart-card.js"
 URL_BASE = f"/{DOMAIN}/frontend"
-
-DEFAULT_RETRY_SECONDS = 5
-DEFAULT_MAX_ATTEMPTS = 12
 
 
 def card_module_url(version: str) -> str:
@@ -59,7 +55,15 @@ async def _async_register_static_path(hass: HomeAssistant) -> None:
 
 
 async def _async_upsert_lovelace_resource(lovelace: Any, version: str) -> None:
-    """Create or update the Lovelace resource entry for the card."""
+    """Create or update the Lovelace resource entry for the card.
+
+    ``ResourceStorageCollection.async_get_info`` ensures the storage
+    collection has loaded before we inspect it; calling it up front avoids
+    misreading an empty/stale ``async_items()`` result while storage is
+    still loading in the background.
+    """
+    await lovelace.resources.async_get_info()
+
     target_url = card_module_url(version)
     target_path = target_url.split("?", 1)[0]
     existing = [
@@ -78,31 +82,22 @@ async def _async_upsert_lovelace_resource(lovelace: Any, version: str) -> None:
         )
 
 
-async def _async_wait_and_register_resource(
-    hass: HomeAssistant,
-    version: str,
-    *,
-    retry_seconds: float = DEFAULT_RETRY_SECONDS,
-    max_attempts: int = DEFAULT_MAX_ATTEMPTS,
-) -> bool:
-    """Register the Lovelace resource once storage-mode resources are loaded.
+async def _async_register_resource(hass: HomeAssistant, version: str) -> bool:
+    """Register the Lovelace resource for storage-mode dashboards.
 
-    Returns False (without raising) when Lovelace is missing, in YAML
-    mode, or never finishes loading within ``max_attempts`` — callers
-    should treat that as "user must add the resource manually".
+    Returns False (without raising) when Lovelace is missing or in YAML
+    mode — callers should treat that as "user must add the resource by
+    hand". ``resource_mode`` is the actual field on
+    ``homeassistant.components.lovelace.LovelaceData`` (not ``mode``,
+    which does not exist on that dataclass and would make this check
+    always skip registration).
     """
     lovelace = hass.data.get("lovelace")
-    if lovelace is None or getattr(lovelace, "mode", None) != "storage":
+    if lovelace is None or getattr(lovelace, "resource_mode", None) != "storage":
         return False
 
-    for _ in range(max_attempts):
-        if getattr(lovelace.resources, "loaded", True):
-            await _async_upsert_lovelace_resource(lovelace, version)
-            return True
-        await asyncio.sleep(retry_seconds)
-
-    _LOGGER.debug("Lovelace resources never finished loading; skipping auto-registration")
-    return False
+    await _async_upsert_lovelace_resource(lovelace, version)
+    return True
 
 
 async def async_register_frontend(hass: HomeAssistant, version: str) -> None:
@@ -113,4 +108,10 @@ async def async_register_frontend(hass: HomeAssistant, version: str) -> None:
     domain_data["frontend_registered"] = True
 
     await _async_register_static_path(hass)
-    await _async_wait_and_register_resource(hass, version)
+    if not await _async_register_resource(hass, version):
+        _LOGGER.info(
+            "Skipped auto-registering the Lovelace resource for %s "
+            "(no storage-mode dashboard found); add it manually if the "
+            "card is missing from the card picker",
+            DOMAIN,
+        )

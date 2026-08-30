@@ -4,8 +4,14 @@ The card previously only served a static JS file. Home Assistant's
 frontend never loads a JS module unless it is also registered as a
 Lovelace resource, so the card silently failed to "arrive" for anyone
 who did not add it by hand under Settings -> Dashboards -> Resources.
+
 These tests cover the fix: auto-register (and auto-update) the resource
 in storage-mode Lovelace, and fail closed (no crash) otherwise.
+
+The Lovelace stub mirrors ``homeassistant.components.lovelace.LovelaceData``
+and ``ResourceStorageCollection`` field/method names exactly (checked
+against Home Assistant core source), because a mismatched attribute name
+here previously made the auto-registration silently never fire.
 """
 
 from __future__ import annotations
@@ -16,9 +22,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 from meteoswiss_rainstart.const import DOMAIN
 from meteoswiss_rainstart.frontend_register import (
+    _async_register_resource,
     _async_register_static_path,
     _async_upsert_lovelace_resource,
-    _async_wait_and_register_resource,
     async_register_frontend,
     card_module_url,
     plan_resource_action,
@@ -43,10 +49,10 @@ def test_plan_resource_action_noop_when_current() -> None:
     assert plan_resource_action(["url.js?v=2"], "url.js?v=2") == "noop"
 
 
-def _lovelace_stub(mode="storage", loaded=True, existing_resources=None):
+def _lovelace_stub(resource_mode="storage", existing_resources=None):
     lovelace = MagicMock()
-    lovelace.mode = mode
-    lovelace.resources.loaded = loaded
+    lovelace.resource_mode = resource_mode
+    lovelace.resources.async_get_info = AsyncMock(return_value={"resources": 0})
     lovelace.resources.async_items = MagicMock(return_value=list(existing_resources or []))
     lovelace.resources.async_create_item = AsyncMock()
     lovelace.resources.async_update_item = AsyncMock()
@@ -105,58 +111,40 @@ def test_upsert_noop_when_already_current() -> None:
     lovelace.resources.async_update_item.assert_not_awaited()
 
 
-def test_wait_and_register_skips_yaml_mode() -> None:
+def test_register_resource_skips_yaml_mode() -> None:
     hass = MagicMock()
-    lovelace = _lovelace_stub(mode="yaml")
+    lovelace = _lovelace_stub(resource_mode="yaml")
     hass.data = {"lovelace": lovelace}
 
-    registered = asyncio.run(_async_wait_and_register_resource(hass, "0.3.0"))
+    registered = asyncio.run(_async_register_resource(hass, "0.3.0"))
 
     assert registered is False
     lovelace.resources.async_create_item.assert_not_awaited()
 
 
-def test_wait_and_register_skips_when_lovelace_missing() -> None:
+def test_register_resource_skips_when_lovelace_missing() -> None:
     hass = MagicMock()
     hass.data = {}
 
-    registered = asyncio.run(_async_wait_and_register_resource(hass, "0.3.0"))
+    registered = asyncio.run(_async_register_resource(hass, "0.3.0"))
 
     assert registered is False
 
 
-def test_wait_and_register_retries_until_resources_loaded() -> None:
+def test_register_resource_ensures_collection_loaded_before_registering() -> None:
+    """Real ResourceStorageCollection.async_items() only reflects storage state
+    after loading. We must await async_get_info() (which ensures loading)
+    before inspecting existing items, not just fire-and-forget.
+    """
     hass = MagicMock()
-    lovelace = _lovelace_stub(mode="storage", loaded=False, existing_resources=[])
+    lovelace = _lovelace_stub(resource_mode="storage", existing_resources=[])
     hass.data = {"lovelace": lovelace}
 
-    attempts = {"count": 0}
-
-    def _loaded_after_two_polls():
-        attempts["count"] += 1
-        return attempts["count"] >= 3
-
-    type(lovelace.resources).loaded = property(lambda self: _loaded_after_two_polls())
-
-    registered = asyncio.run(
-        _async_wait_and_register_resource(hass, "0.3.0", retry_seconds=0, max_attempts=5)
-    )
+    registered = asyncio.run(_async_register_resource(hass, "0.3.0"))
 
     assert registered is True
+    lovelace.resources.async_get_info.assert_awaited_once()
     lovelace.resources.async_create_item.assert_awaited_once()
-
-
-def test_wait_and_register_gives_up_after_max_attempts() -> None:
-    hass = MagicMock()
-    lovelace = _lovelace_stub(mode="storage", loaded=False, existing_resources=[])
-    hass.data = {"lovelace": lovelace}
-
-    registered = asyncio.run(
-        _async_wait_and_register_resource(hass, "0.3.0", retry_seconds=0, max_attempts=3)
-    )
-
-    assert registered is False
-    lovelace.resources.async_create_item.assert_not_awaited()
 
 
 def test_register_static_path_is_idempotent_on_runtime_error() -> None:

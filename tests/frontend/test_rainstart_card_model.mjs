@@ -65,7 +65,17 @@ describe("buildCardViewModel", () => {
     assert.equal(model.status, "ok");
     assert.equal(model.locationName, "Belp");
     assert.equal(model.hero, "Rain in 23 min");
+    assert.equal(model.stateLabel, "Rain");
+    assert.equal(model.value, "23");
+    assert.equal(model.unit, "min");
+    assert.equal(model.attribute, "4.5 km");
+    assert.equal(model.icon, "mdi:weather-rainy");
     assert.match(model.subtitle, /4\.5 km/);
+    assert.deepEqual(model.stats, [
+      { label: "Now", value: "0 mm/h" },
+      { label: "Ends", value: "45 min" },
+      { label: "Radar", value: "8 min" },
+    ]);
     assert.equal(model.timeline.length, 2);
   });
 
@@ -75,10 +85,18 @@ describe("buildCardViewModel", () => {
       [ids.next_rain]: state(ids.next_rain, "0", { location_name: "Belp" }),
       [ids.raining]: state(ids.raining, "on"),
       [ids.nearest_rain]: state(ids.nearest_rain, "0"),
+      [ids.precipitation]: state(ids.precipitation, "2", {
+        intensity_series: [],
+      }),
     });
     const model = buildCardViewModel({ entityIds: ids, states });
     assert.equal(model.hero, "Raining now");
     assert.equal(model.heroTone, "wet");
+    assert.equal(model.stateLabel, "Raining");
+    assert.equal(model.value, "Now");
+    assert.equal(model.unit, "");
+    assert.equal(model.attribute, "2 mm/h");
+    assert.equal(model.icon, "mdi:weather-pouring");
   });
 
   it("shows no rain expected for unknown horizon", () => {
@@ -90,6 +108,22 @@ describe("buildCardViewModel", () => {
     const model = buildCardViewModel({ entityIds: ids, states });
     assert.equal(model.hero, "No rain expected");
     assert.equal(model.heroTone, "muted");
+    assert.equal(model.stateLabel, "Clear");
+    assert.equal(model.value, "—");
+    assert.equal(model.unit, "");
+    assert.equal(model.icon, "mdi:weather-partly-cloudy");
+  });
+
+  it("shows later rain with the dry icon, not the soon icon", () => {
+    const ids = relatedEntityIds("sensor.meteoswiss_rainstart_belp_next_rain_minutes");
+    const states = belpStates({
+      [ids.next_rain]: state(ids.next_rain, "45", { location_name: "Belp" }),
+    });
+    const model = buildCardViewModel({ entityIds: ids, states });
+    assert.equal(model.heroTone, "dry");
+    assert.equal(model.stateLabel, "Rain");
+    assert.equal(model.value, "45");
+    assert.equal(model.icon, "mdi:weather-partly-rainy");
   });
 
   it("shows parser problem banner and hides rain hero", () => {
@@ -103,6 +137,10 @@ describe("buildCardViewModel", () => {
     const model = buildCardViewModel({ entityIds: ids, states });
     assert.equal(model.status, "problem");
     assert.equal(model.problem.detail, "no_frames");
+    assert.equal(model.stateLabel, "Problem");
+    assert.equal(model.value, "—");
+    assert.equal(model.icon, "mdi:alert-circle-outline");
+    assert.deepEqual(model.stats, []);
   });
 
   it("shows unavailable when next rain sensor is unavailable", () => {
@@ -112,17 +150,23 @@ describe("buildCardViewModel", () => {
     });
     const model = buildCardViewModel({ entityIds: ids, states });
     assert.equal(model.status, "unavailable");
+    assert.equal(model.stateLabel, "Unavailable");
+    assert.equal(model.value, "—");
+    assert.equal(model.icon, "mdi:alert-circle-outline");
   });
 });
 
 describe("renderTimelineSvg", () => {
   it("renders bars for measurement and forecast", () => {
     const svg = renderTimelineSvg([
-      { rate_lo: 0, kind: "measurement", timestamp: "2026-08-29T17:25:00+02:00" },
+      { rate_lo: 1, kind: "measurement", timestamp: "2026-08-29T17:25:00+02:00" },
       { rate_lo: 2, kind: "forecast", timestamp: "2026-08-29T17:40:00+02:00" },
     ]);
     assert.match(svg, /^<svg/);
     assert.match(svg, /measurement/);
     assert.match(svg, /forecast/);
+    assert.match(svg, /var\(--blue-color/);
+    assert.match(svg, /var\(--cyan-color/);
+    assert.doesNotMatch(svg, /#[0-9a-fA-F]{3,8}/);
   });
 });

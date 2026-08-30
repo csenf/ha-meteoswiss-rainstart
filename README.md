@@ -48,7 +48,7 @@ type: custom:meteoswiss-rainstart-card
 entity: sensor.meteoswiss_rainstart_belp_next_rain_minutes
 ```
 
-The card reads the next-rain sensor and discovers the related entities for the same location. It shows a rain countdown, nearest-rain distance, a measured/forecast timeline, and footer stats (current rate, rain end, radar age). Parser problem replaces the rain summary with a red banner.
+The card reads the next-rain sensor and discovers the related entities for the same location. It follows the Home Assistant weather-card layout: condition icon, location, status, a large minutes value, a measured/forecast timeline, and labeled stats (current rate, rain end, radar age). Parser problem uses a Home Assistant error alert. In the sections view the card defaults to full width (12 columns). Tapping it opens more-info for the next-rain sensor. The card picker suggests it for that sensor (Home Assistant 2026.6+).
 
 ### If the card is not in the card picker
 

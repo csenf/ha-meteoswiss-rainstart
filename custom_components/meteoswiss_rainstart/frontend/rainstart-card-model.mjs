@@ -88,6 +88,28 @@ function clockLabel(timestamp) {
   return text.slice(0, 5);
 }
 
+const ICONS = {
+  wet: "mdi:weather-pouring",
+  soon: "mdi:weather-rainy",
+  dry: "mdi:weather-partly-rainy",
+  muted: "mdi:weather-partly-cloudy",
+  error: "mdi:alert-circle-outline",
+};
+
+function emptyLayout(overrides) {
+  return {
+    subtitle: null,
+    attribute: null,
+    unit: "",
+    value: "—",
+    stats: [],
+    problem: null,
+    timeline: [],
+    maxRate: 0,
+    ...overrides,
+  };
+}
+
 export function buildCardViewModel({ entityIds, states }) {
   const nextRain = readState(states, entityIds.next_rain);
   const parser = readState(states, entityIds.parser_problem);
@@ -97,33 +119,28 @@ export function buildCardViewModel({ entityIds, states }) {
     "Rain-Start";
 
   if (parser?.state === "on") {
-    return {
+    return emptyLayout({
       status: "problem",
       locationName,
       hero: "Parser problem",
       heroTone: "error",
-      subtitle: null,
-      footer: { precipitation: null, rainEnd: null, dataAge: null },
+      stateLabel: "Problem",
+      icon: ICONS.error,
       problem: {
         detail: parser.attributes?.parse_detail ?? "broken",
       },
-      timeline: [],
-      maxRate: 0,
-    };
+    });
   }
 
   if (!nextRain || nextRain.state === "unavailable") {
-    return {
+    return emptyLayout({
       status: "unavailable",
       locationName,
       hero: "Unavailable",
       heroTone: "error",
-      subtitle: null,
-      footer: { precipitation: null, rainEnd: null, dataAge: null },
-      problem: null,
-      timeline: [],
-      maxRate: 0,
-    };
+      stateLabel: "Unavailable",
+      icon: ICONS.error,
+    });
   }
 
   const raining = readState(states, entityIds.raining)?.state === "on";
@@ -135,19 +152,33 @@ export function buildCardViewModel({ entityIds, states }) {
 
   let hero;
   let heroTone;
+  let stateLabel;
+  let value;
+  let unit = "";
   let subtitle = null;
+  let attribute = null;
 
   if (raining || nextRainMinutes === 0) {
     hero = "Raining now";
     heroTone = "wet";
+    stateLabel = "Raining";
+    value = "Now";
+    attribute = formatRate(precipitation);
   } else if (nextRain?.state === "unknown" || nextRainMinutes == null) {
     hero = "No rain expected";
     heroTone = "muted";
+    stateLabel = "Clear";
+    value = "—";
   } else {
-    hero = `Rain in ${Math.round(nextRainMinutes)} min`;
+    const minutes = Math.round(nextRainMinutes);
+    hero = `Rain in ${minutes} min`;
     heroTone = nextRainMinutes <= 30 ? "soon" : "dry";
+    stateLabel = "Rain";
+    value = String(minutes);
+    unit = "min";
     if (nearestKm != null && nearestKm > 0) {
-      subtitle = `Nearest rain ${formatDistanceKm(nearestKm)} away`;
+      attribute = formatDistanceKm(nearestKm);
+      subtitle = `Nearest rain ${attribute} away`;
     }
   }
 
@@ -161,18 +192,24 @@ export function buildCardViewModel({ entityIds, states }) {
     timestamp: item.timestamp ?? "",
   }));
   const maxRate = Math.max(4, ...timeline.map((item) => item.rate_lo), 0);
+  const stats = [
+    precipitation != null ? { label: "Now", value: formatRate(precipitation) } : null,
+    rainEnd != null ? { label: "Ends", value: formatMinutes(rainEnd) } : null,
+    dataAge != null ? { label: "Radar", value: formatMinutes(dataAge) } : null,
+  ].filter(Boolean);
 
   return {
     status: "ok",
     locationName,
     hero,
     heroTone,
+    stateLabel,
+    value,
+    unit,
+    attribute,
+    icon: ICONS[heroTone],
     subtitle,
-    footer: {
-      precipitation: formatRate(precipitation),
-      rainEnd: rainEnd == null ? null : `Ends in ${formatMinutes(rainEnd)}`,
-      dataAge: dataAge == null ? null : `Radar ${formatMinutes(dataAge)} old`,
-    },
+    stats,
     problem: null,
     timeline,
     maxRate,
@@ -201,9 +238,11 @@ export function renderTimelineSvg(series, maxRate = null) {
       const x = pad + index * barW + 1;
       const y = pad + plotH - barHeight;
       const fill =
-        rate <= 0 ? "var(--divider-color, #e5e7eb)" : item.kind === "measurement"
-          ? "#2563eb"
-          : "#38bdf8";
+        rate <= 0
+          ? "var(--disabled-color, var(--divider-color))"
+          : item.kind === "measurement"
+            ? "var(--blue-color, var(--info-color))"
+            : "var(--cyan-color, var(--info-color))";
       return `<rect class="${item.kind}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" ` +
         `width="${Math.max(1, barW - 2).toFixed(1)}" height="${barHeight.toFixed(1)}" fill="${fill}" rx="1"/>`;
     })

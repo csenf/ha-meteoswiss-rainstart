@@ -1,86 +1,289 @@
 import {
   buildCardViewModel,
+  parseNextRainEntityId,
   relatedEntityIds,
   renderTimelineSvg,
 } from "./rainstart-card-model.mjs";
 
 const CARD_TAG = "meteoswiss-rainstart-card";
-const CARD_STYLE_ID = "meteoswiss-rainstart-card-style";
+const DOCUMENTATION_URL =
+  "https://github.com/csenf/ha-meteoswiss-rainstart";
 
-function ensureCardStyles() {
-  if (document.getElementById(CARD_STYLE_ID)) {
-    return;
+const CARD_STYLES = `
+  :host {
+    display: block;
+    height: 100%;
   }
-  const style = document.createElement("style");
-  style.id = CARD_STYLE_ID;
-  style.textContent = `
-    meteoswiss-rainstart-card ha-card.rainstart-card {
-      overflow: hidden;
-    }
-    meteoswiss-rainstart-card .content {
-      padding: 16px;
-    }
-    meteoswiss-rainstart-card .location {
-      color: var(--secondary-text-color);
-      font-size: 0.9rem;
-    }
-    meteoswiss-rainstart-card .hero {
-      font-size: 1.6rem;
-      font-weight: 600;
-      line-height: 1.2;
-      margin-top: 4px;
-    }
-    meteoswiss-rainstart-card .tone-soon .hero { color: var(--warning-color, #f59e0b); }
-    meteoswiss-rainstart-card .tone-wet .hero { color: var(--info-color, #0284c7); }
-    meteoswiss-rainstart-card .tone-dry .hero { color: var(--primary-text-color); }
-    meteoswiss-rainstart-card .tone-muted .hero { color: var(--secondary-text-color); }
-    meteoswiss-rainstart-card .tone-error .hero { color: var(--error-color, #dc2626); }
-    meteoswiss-rainstart-card .subtitle {
-      color: var(--secondary-text-color);
-      margin-top: 6px;
-    }
-    meteoswiss-rainstart-card .banner.problem {
-      background: rgba(220, 38, 38, 0.12);
-      border-radius: 8px;
-      color: var(--error-color, #dc2626);
-      margin-top: 12px;
-      padding: 10px 12px;
-    }
-    meteoswiss-rainstart-card .timeline-wrap {
-      margin-top: 14px;
-    }
-    meteoswiss-rainstart-card svg.timeline {
-      display: block;
-      height: 72px;
-      width: 100%;
-    }
-    meteoswiss-rainstart-card .timeline-label,
-    meteoswiss-rainstart-card .timeline-empty {
-      fill: var(--secondary-text-color);
-      font-size: 10px;
-    }
-    meteoswiss-rainstart-card .footer {
-      color: var(--secondary-text-color);
-      display: flex;
-      flex-wrap: wrap;
-      font-size: 0.85rem;
-      gap: 8px 12px;
-      margin-top: 12px;
-    }
-    meteoswiss-rainstart-card .error {
-      color: var(--error-color, #dc2626);
-    }
-  `;
-  document.head.appendChild(style);
+  ha-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    outline: none;
+    padding: var(--ha-space-4, 16px) 0;
+  }
+  .content {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 var(--ha-space-4, 16px);
+  }
+  .content + .forecast,
+  .content + .alert,
+  .content + .stats {
+    padding-top: var(--ha-space-4, 16px);
+  }
+  .icon-image {
+    display: flex;
+    align-items: center;
+    min-width: 64px;
+    margin-inline-end: var(--ha-space-4, 16px);
+    margin-inline-start: initial;
+  }
+  .icon-image > * {
+    flex: 0 0 64px;
+    height: 64px;
+  }
+  .weather-icon {
+    --mdc-icon-size: 64px;
+    color: var(--state-icon-color);
+  }
+  .tone-wet .weather-icon { color: var(--info-color); }
+  .tone-soon .weather-icon { color: var(--warning-color); }
+  .tone-dry .weather-icon { color: var(--state-icon-color); }
+  .tone-muted .weather-icon { color: var(--secondary-text-color); }
+  .tone-error .weather-icon { color: var(--error-color); }
+  .info {
+    display: flex;
+    justify-content: space-between;
+    flex-grow: 1;
+    overflow: hidden;
+  }
+  .name-state {
+    overflow: hidden;
+    padding-inline-end: var(--ha-space-3, 12px);
+    padding-inline-start: initial;
+    width: 100%;
+  }
+  .name,
+  .attribute {
+    color: var(--secondary-text-color);
+    font-size: var(--ha-font-size-m);
+    line-height: var(--ha-line-height-condensed);
+  }
+  .state,
+  .temp-attribute .temp {
+    font-size: var(--ha-font-size-3xl);
+    line-height: var(--ha-line-height-condensed);
+  }
+  .name,
+  .state {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .temp-attribute {
+    text-align: var(--float-end, end);
+  }
+  .temp-attribute .temp {
+    direction: ltr;
+    white-space: nowrap;
+  }
+  .temp .unit {
+    color: var(--secondary-text-color);
+    font-size: var(--ha-font-size-l);
+    margin-inline-start: 2px;
+  }
+  .attribute {
+    white-space: nowrap;
+    direction: ltr;
+  }
+  .alert {
+    padding: 0 var(--ha-space-4, 16px);
+  }
+  .forecast {
+    padding: 0 var(--ha-space-4, 16px);
+  }
+  svg.timeline {
+    display: block;
+    height: 72px;
+    width: 100%;
+  }
+  .timeline-label,
+  .timeline-empty {
+    fill: var(--secondary-text-color);
+    font-size: var(--ha-font-size-s, 12px);
+  }
+  .stats {
+    display: flex;
+    justify-content: space-around;
+    padding: var(--ha-space-3, 12px) var(--ha-space-4, 16px) 0;
+    gap: var(--ha-space-2, 8px);
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+    gap: var(--ha-space-1, 4px);
+  }
+  .stat-value {
+    font-size: var(--ha-font-size-m);
+    line-height: var(--ha-line-height-condensed);
+    white-space: nowrap;
+  }
+  .stat-label {
+    color: var(--secondary-text-color);
+    font-size: var(--ha-font-size-s);
+    line-height: 1;
+  }
+  .error {
+    color: var(--error-color);
+    font-size: var(--ha-font-size-l);
+    padding: var(--ha-space-4, 16px);
+    text-align: center;
+  }
+
+  :host([data-width="narrow"]) .icon-image {
+    min-width: 52px;
+  }
+  :host([data-width="narrow"]) .icon-image > *,
+  :host([data-width="narrow"]) .icon-image .weather-icon {
+    flex-basis: 52px;
+    height: 52px;
+    --mdc-icon-size: 52px;
+  }
+  :host([data-width="narrow"]) .state,
+  :host([data-width="narrow"]) .temp-attribute .temp {
+    font-size: var(--ha-font-size-xl);
+  }
+
+  :host([data-width="very-narrow"]) .name,
+  :host([data-width="very-narrow"]) .attribute {
+    display: none;
+  }
+  :host([data-width="very-narrow"]) .info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  :host([data-width="very-narrow"]) .name-state {
+    padding-inline-end: 0;
+  }
+
+  :host([data-width="very-very-narrow"]) .content {
+    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  :host([data-width="very-very-narrow"]) .info {
+    align-items: center;
+    padding-top: var(--ha-space-1, 4px);
+  }
+  :host([data-width="very-very-narrow"]) .icon-image {
+    min-width: 48px;
+    margin-inline-end: 0;
+  }
+  :host([data-width="very-very-narrow"]) .icon-image > * {
+    flex: 0 0 48px;
+    height: 48px;
+    --mdc-icon-size: 48px;
+  }
+  :host([data-width="very-very-narrow"]) .content + .forecast,
+  :host([data-width="very-very-narrow"]) .content + .alert,
+  :host([data-width="very-very-narrow"]) .content + .stats {
+    padding-top: var(--ha-space-2, 8px);
+  }
+
+  :host([data-height="short"]) .state,
+  :host([data-height="short"]) .temp-attribute .temp {
+    font-size: var(--ha-font-size-xl);
+  }
+  :host([data-height="short"]) .content + .forecast,
+  :host([data-height="short"]) .content + .alert,
+  :host([data-height="short"]) .content + .stats {
+    padding-top: var(--ha-space-3, 12px);
+  }
+  :host([data-height="short"]) svg.timeline {
+    height: 56px;
+  }
+`;
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function isNextRainEntity(entityId) {
+  try {
+    parseNextRainEntityId(entityId);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function firstNextRainEntity(hass) {
+  if (!hass?.states) {
+    return "";
+  }
+  return Object.keys(hass.states).find((entityId) => isNextRainEntity(entityId)) ?? "";
+}
+
+function stateSignature(hass, entityIds) {
+  return Object.values(entityIds)
+    .map((entityId) => {
+      const item = hass.states?.[entityId];
+      return item ? `${entityId}:${item.state}:${item.last_updated}` : `${entityId}:`;
+    })
+    .join("|");
 }
 
 class MeteoSwissRainStartCard extends HTMLElement {
-  static getStubConfig() {
-    return { entity: "sensor.meteoswiss_rainstart_example_next_rain_minutes" };
+  static getStubConfig(hass) {
+    return {
+      entity:
+        firstNextRainEntity(hass) ||
+        "sensor.meteoswiss_rainstart_example_next_rain_minutes",
+    };
   }
 
-  static getConfigElement() {
-    return document.createElement(`${CARD_TAG}-editor`);
+  static getConfigForm() {
+    return {
+      schema: [
+        {
+          name: "entity",
+          required: true,
+          selector: {
+            entity: {
+              filter: {
+                domain: "sensor",
+                integration: "meteoswiss_rainstart",
+              },
+            },
+          },
+        },
+      ],
+      computeHelper: (schema) => {
+        if (schema.name === "entity") {
+          return "Next rain minutes sensor for one location";
+        }
+        return undefined;
+      },
+    };
+  }
+
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this._config = undefined;
+    this._hass = undefined;
+    this._signature = undefined;
   }
 
   setConfig(config) {
@@ -88,6 +291,8 @@ class MeteoSwissRainStartCard extends HTMLElement {
       throw new Error("Set the next rain minutes entity");
     }
     this._config = config;
+    this._signature = undefined;
+    this._render();
   }
 
   set hass(hass) {
@@ -96,102 +301,153 @@ class MeteoSwissRainStartCard extends HTMLElement {
   }
 
   getCardSize() {
-    return 3;
+    return 4;
+  }
+
+  getGridOptions() {
+    return {
+      columns: 12,
+      rows: 4,
+      min_columns: 6,
+      min_rows: 3,
+    };
+  }
+
+  connectedCallback() {
+    if (this.shadowRoot.getElementById("root")) {
+      return;
+    }
+    this.shadowRoot.innerHTML = `<style>${CARD_STYLES}</style><div id="root"></div>`;
+    this.shadowRoot.addEventListener("click", this._onClick);
+    this.shadowRoot.addEventListener("keydown", this._onKeydown);
+    this._resizeObserver = new ResizeObserver((entries) => {
+      const rect = entries[0]?.contentRect;
+      if (!rect) {
+        return;
+      }
+      const width =
+        rect.width < 180
+          ? "very-very-narrow"
+          : rect.width < 300
+            ? "very-narrow"
+            : rect.width < 375
+              ? "narrow"
+              : "regular";
+      const height = rect.height < 200 ? "short" : "tall";
+      if (this.dataset.width !== width) {
+        this.dataset.width = width;
+      }
+      if (this.dataset.height !== height) {
+        this.dataset.height = height;
+      }
+    });
+    this._resizeObserver.observe(this);
+    this._render();
+  }
+
+  disconnectedCallback() {
+    this._resizeObserver?.disconnect();
+    this._resizeObserver = undefined;
+  }
+
+  _onClick = () => {
+    this._openMoreInfo();
+  };
+
+  _onKeydown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      this._openMoreInfo();
+    }
+  };
+
+  _openMoreInfo() {
+    if (!this._config?.entity) {
+      return;
+    }
+    this.dispatchEvent(
+      new CustomEvent("hass-more-info", {
+        bubbles: true,
+        composed: true,
+        detail: { entityId: this._config.entity },
+      }),
+    );
   }
 
   _render() {
-    if (!this._config?.entity || !this._hass) {
+    const root = this.shadowRoot?.getElementById("root");
+    if (!root || !this._config?.entity || !this._hass) {
       return;
     }
-    ensureCardStyles();
 
     let entityIds;
     try {
       entityIds = relatedEntityIds(this._config.entity);
     } catch (error) {
-      this.innerHTML = `<ha-card class="rainstart-card"><div class="content error">${error.message}</div></ha-card>`;
+      root.innerHTML = `<ha-card class="rainstart-card"><div class="error">${escapeHtml(error.message)}</div></ha-card>`;
       return;
     }
+
+    const signature = stateSignature(this._hass, entityIds);
+    if (signature === this._signature && root.childElementCount) {
+      return;
+    }
+    this._signature = signature;
 
     const model = buildCardViewModel({
       entityIds,
       states: this._hass.states,
     });
 
-    const footerParts = [
-      model.footer.precipitation ? `Now ${model.footer.precipitation}` : null,
-      model.footer.rainEnd,
-      model.footer.dataAge,
-    ].filter(Boolean);
+    const unit = model.unit
+      ? `<span class="unit">${escapeHtml(model.unit)}</span>`
+      : "";
+    const attribute = model.attribute
+      ? `<div class="attribute">${escapeHtml(model.attribute)}</div>`
+      : "";
+    const alert = model.problem
+      ? `<div class="alert"><ha-alert alert-type="error">${escapeHtml(model.problem.detail)}</ha-alert></div>`
+      : "";
+    const forecast = model.timeline.length
+      ? `<div class="forecast">${renderTimelineSvg(model.timeline, model.maxRate)}</div>`
+      : "";
+    const stats = model.stats.length
+      ? `<div class="stats">${model.stats
+          .map(
+            (item) =>
+              `<div class="stat"><span class="stat-value">${escapeHtml(item.value)}</span>` +
+              `<span class="stat-label">${escapeHtml(item.label)}</span></div>`,
+          )
+          .join("")}</div>`
+      : "";
 
-    this.innerHTML = `
-      <ha-card class="rainstart-card">
-        <div class="content status-${model.status} tone-${model.heroTone}">
-          <div class="header">
-            <div class="location">${model.locationName}</div>
-            <div class="hero">${model.hero}</div>
-            ${model.subtitle ? `<div class="subtitle">${model.subtitle}</div>` : ""}
+    root.innerHTML = `
+      <ha-card class="rainstart-card status-${escapeHtml(model.status)} tone-${escapeHtml(model.heroTone)}"
+        tabindex="0" aria-label="${escapeHtml(model.hero)}">
+        <div class="content">
+          <div class="icon-image">
+            <ha-icon class="weather-icon" icon="${escapeHtml(model.icon)}"></ha-icon>
           </div>
-          ${
-            model.status === "problem"
-              ? `<div class="banner problem">${model.problem.detail}</div>`
-              : ""
-          }
-          ${
-            model.timeline.length
-              ? `<div class="timeline-wrap">${renderTimelineSvg(model.timeline, model.maxRate)}</div>`
-              : ""
-          }
-          ${
-            footerParts.length
-              ? `<div class="footer">${footerParts.map((part) => `<span>${part}</span>`).join("")}</div>`
-              : ""
-          }
+          <div class="info">
+            <div class="name-state">
+              <div class="name">${escapeHtml(model.locationName)}</div>
+              <div class="state">${escapeHtml(model.stateLabel)}</div>
+            </div>
+            <div class="temp-attribute">
+              <div class="temp">${escapeHtml(model.value)}${unit}</div>
+              ${attribute}
+            </div>
+          </div>
         </div>
+        ${alert}
+        ${forecast}
+        ${stats}
       </ha-card>
     `;
   }
 }
 
-class MeteoSwissRainStartCardEditor extends HTMLElement {
-  setConfig(config) {
-    this._config = { ...config };
-  }
-
-  set hass(hass) {
-    this._hass = hass;
-    this._render();
-  }
-
-  _render() {
-    if (!this._hass) {
-      return;
-    }
-    if (!this._config) {
-      this._config = MeteoSwissRainStartCard.getStubConfig();
-    }
-    this.innerHTML = `
-      <div class="editor">
-        <ha-entity-picker label="Next rain minutes entity"></ha-entity-picker>
-      </div>
-    `;
-    const picker = this.querySelector("ha-entity-picker");
-    if (!picker) {
-      return;
-    }
-    picker.hass = this._hass;
-    picker.value = this._config.entity ?? "";
-    picker.includeDomains = ["sensor"];
-    picker.allowCustomEntity = true;
-    picker.addEventListener("value-changed", (event) => {
-      this._config = { ...this._config, entity: event.detail.value };
-      this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: this._config } }));
-    });
-  }
-}
-
 customElements.define(CARD_TAG, MeteoSwissRainStartCard);
-customElements.define(`${CARD_TAG}-editor`, MeteoSwissRainStartCardEditor);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
@@ -199,4 +455,13 @@ window.customCards.push({
   name: "MeteoSwiss Rain-Start",
   description: "Rain countdown and nowcast timeline for one location",
   preview: true,
+  documentationURL: DOCUMENTATION_URL,
+  getEntitySuggestion: (_hass, entityId) => {
+    if (!isNextRainEntity(entityId)) {
+      return null;
+    }
+    return {
+      config: { type: `custom:${CARD_TAG}`, entity: entityId },
+    };
+  },
 });

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Push current HEAD and vX.Y.Z tags to GitHub over SSH (write deploy key).
+# Push current HEAD and SemVer tags reachable from HEAD to GitHub over SSH
+# (write deploy key). Pre-public leftover tags are not copied.
 #
 # Env:
 #   GH_DEPLOY_KEY  — passphrase-free private key (full PEM / OpenSSH)
@@ -32,4 +33,4 @@ remote="git@github.com:${GH_REPO}.git"
 git push "$remote" HEAD:refs/heads/main
 while IFS= read -r tag; do
   git push "$remote" "refs/tags/${tag}"
-done < <(git tag -l 'v[0-9]*.[0-9]*.[0-9]*')
+done < <(bash scripts/reachable-semver-tags.sh)

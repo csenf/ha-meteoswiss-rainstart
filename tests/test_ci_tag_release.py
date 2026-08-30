@@ -10,6 +10,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TAG_SCRIPT = REPO_ROOT / "scripts" / "ci-tag-release.sh"
 STAMP_SCRIPT = REPO_ROOT / "scripts" / "stamp-version.sh"
+REACHABLE_SCRIPT = REPO_ROOT / "scripts" / "reachable-semver-tags.sh"
 COMPONENT = Path("custom_components/meteoswiss_rainstart")
 
 
@@ -34,6 +35,7 @@ def _prepare_repo(tmp_path: Path, *, version: str = "0.2.0") -> Path:
     (repo / "scripts").mkdir()
     shutil.copy(TAG_SCRIPT, repo / "scripts" / "ci-tag-release.sh")
     shutil.copy(STAMP_SCRIPT, repo / "scripts" / "stamp-version.sh")
+    shutil.copy(REACHABLE_SCRIPT, repo / "scripts" / "reachable-semver-tags.sh")
     (repo / COMPONENT / "manifest.json").write_text(
         json.dumps(
             {
@@ -124,3 +126,28 @@ def test_fix_is_a_patch_bump(tmp_path: Path) -> None:
     assert "VERSION=0.2.1" in result.stdout.splitlines()
     assert _manifest_version(repo) == "0.2.1"
     assert _git(repo, "tag", "--points-at", "HEAD").stdout.strip() == "v0.2.1"
+
+
+def _add_unreachable_semver_tag(repo: Path, version: str) -> None:
+    """Tag a commit that is not an ancestor of main HEAD (pre-public leftover)."""
+    _git(repo, "checkout", "--orphan", "pre-public")
+    (repo / "old.txt").write_text(f"{version}\n", encoding="utf-8")
+    _git(repo, "add", "old.txt")
+    _git(repo, "commit", "-m", f"feat: archived {version}")
+    _git(repo, "tag", "-a", f"v{version}", "-m", f"Release v{version}")
+    _git(repo, "checkout", "main")
+    _git(repo, "branch", "-D", "pre-public")
+
+
+def test_unreachable_higher_tag_does_not_bump_from_that_version(tmp_path: Path) -> None:
+    repo = _prepare_repo(tmp_path)
+    _add_unreachable_semver_tag(repo, "0.7.0")
+    (repo / "note.txt").write_text("x\n", encoding="utf-8")
+    _git(repo, "add", "note.txt")
+    _git(repo, "commit", "-m", "feat: add sensor")
+
+    result = _release(repo)
+
+    assert "VERSION=0.3.0" in result.stdout.splitlines()
+    assert _manifest_version(repo) == "0.3.0"
+    assert _git(repo, "tag", "--points-at", "HEAD").stdout.strip() == "v0.3.0"

@@ -4,6 +4,7 @@ Public history starts at **v0.2.0** (`chore: public root at v0.2.0`). Older Gite
 
 | Date | Change |
 |------|--------|
+| 2026-08-30 | Promote and release only use SemVer tags reachable from HEAD; pre-public `v0.2.1`–`v0.7.0` stay on Gitea as `archive/*` |
 | 2026-08-30 | Promote to GitHub uses a write-enabled SSH deploy key (`GH_DEPLOY_KEY`) instead of a rotating PAT |
 | 2026-08-30 | Promote workflow secret renamed from `GITHUB_PUSH_URL` to `GH_PUSH_URL` |
 | 2026-08-30 | Promote to GitHub pushes only SemVer tags (`vMAJOR.MINOR.PATCH`) |

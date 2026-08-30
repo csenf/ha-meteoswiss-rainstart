@@ -32,7 +32,7 @@ cd "$(dirname "$0")/.."
 
 COMPONENT="custom_components/meteoswiss_rainstart"
 
-last_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1 || true)
+last_tag=$(bash scripts/reachable-semver-tags.sh | head -n1 || true)
 if [ -z "$last_tag" ]; then
   last_tag="v0.0.0"
   range="HEAD"

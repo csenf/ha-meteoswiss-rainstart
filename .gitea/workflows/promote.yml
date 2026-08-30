@@ -15,7 +15,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Push main and SemVer tags
+      - name: Push main and SemVer tags reachable from HEAD
         env:
           GH_DEPLOY_KEY: ${{ secrets.GH_DEPLOY_KEY }}
         run: bash scripts/promote-to-github.sh

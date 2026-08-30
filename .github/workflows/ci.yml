@@ -36,6 +36,7 @@ jobs:
           bash -n scripts/deploy.sh
           bash -n scripts/stamp-version.sh
           bash -n scripts/dev-version.sh
+          bash -n scripts/promote-to-github.sh
 
   tag:
     name: Tag release

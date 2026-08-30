@@ -1,7 +1,6 @@
-# Push Gitea main to GitHub. Use after you want a public/HACS release.
-# Secret GH_PUSH_URL: https://x-access-token:TOKEN@github.com/owner/repo.git
-# GitHub Actions then stamps, tags, and creates the Release. It can push
-# that commit and tag back if GITEA_PUSH_URL is set on GitHub.
+# Push Gitea main to GitHub over SSH. Secret GH_DEPLOY_KEY is a write-enabled
+# GitHub deploy private key (does not expire). GitHub Actions then stamps,
+# tags, and creates the Release.
 name: Promote to GitHub
 on:
   workflow_dispatch:
@@ -16,16 +15,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Push main
+      - name: Push main and SemVer tags
         env:
-          GH_PUSH_URL: ${{ secrets.GH_PUSH_URL }}
-        run: |
-          set -euo pipefail
-          if [ -z "${GH_PUSH_URL}" ]; then
-            echo "Set repository secret GH_PUSH_URL."
-            exit 1
-          fi
-          git push "${GH_PUSH_URL}" HEAD:refs/heads/main
-          while IFS= read -r tag; do
-            git push "${GH_PUSH_URL}" "refs/tags/${tag}"
-          done < <(git tag -l 'v[0-9]*.[0-9]*.[0-9]*')
+          GH_DEPLOY_KEY: ${{ secrets.GH_DEPLOY_KEY }}
+        run: bash scripts/promote-to-github.sh

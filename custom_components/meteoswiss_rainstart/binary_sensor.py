@@ -22,6 +22,24 @@ _WHAT_TO_DO_FALLBACK = (
 )
 
 
+def _resolve_what_to_do(hass: HomeAssistant) -> str:
+    """Look up the localized parser_problem "what to do" hint.
+
+    ``async_get_cached_translations`` takes a single integration domain
+    (or None for "all loaded integrations"), not a set - it builds the set
+    internally. Passing a set here raises ``TypeError: unhashable type``
+    once the cache actually gets used, since ``{integration}`` becomes a
+    set containing a set.
+    """
+    cached = getattr(translation, "async_get_cached_translations", None)
+    if cached is None:
+        return _WHAT_TO_DO_FALLBACK
+    strings = cached(hass, hass.config.language, "common", DOMAIN)
+    return strings.get(
+        f"component.{DOMAIN}.parser_problem.what_to_do", _WHAT_TO_DO_FALLBACK
+    )
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -71,17 +89,8 @@ class ParserProblemBinarySensor(RainStartEntity, BinarySensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, object]:
-        cached = getattr(translation, "async_get_cached_translations", None)
-        strings = (
-            cached(self.hass, self.hass.config.language, "common", {DOMAIN})
-            if cached is not None
-            else {}
-        )
         return {
             "parse_detail": self.coordinator.parse_detail,
             "last_fetch_status": self.coordinator.last_fetch_status,
-            "what_to_do": strings.get(
-                f"component.{DOMAIN}.parser_problem.what_to_do",
-                _WHAT_TO_DO_FALLBACK,
-            ),
+            "what_to_do": _resolve_what_to_do(self.hass),
         }

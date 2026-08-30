@@ -199,8 +199,23 @@ if "homeassistant.helpers.update_coordinator" not in sys.modules:
             self.update_interval = update_interval
             self.data = None
 
+    class CoordinatorEntity:
+        """Minimal stub mirroring the real base class's constructor contract."""
+
+        def __class_getitem__(cls, _item):
+            return cls
+
+        def __init__(self, coordinator):
+            self.coordinator = coordinator
+            self.hass = getattr(coordinator, "hass", None)
+
+        @property
+        def available(self) -> bool:
+            return True
+
     ha_coord.UpdateFailed = UpdateFailed
     ha_coord.DataUpdateCoordinator = DataUpdateCoordinator
+    ha_coord.CoordinatorEntity = CoordinatorEntity
     sys.modules["homeassistant.helpers.update_coordinator"] = ha_coord
     sys.modules["homeassistant.helpers"].update_coordinator = ha_coord
 
@@ -245,6 +260,31 @@ if "homeassistant.components.diagnostics" not in sys.modules:
     ha_diag.async_redact_data = async_redact_data
     sys.modules["homeassistant.components.diagnostics"] = ha_diag
     sys.modules["homeassistant.components"].diagnostics = ha_diag
+
+if "homeassistant.helpers.entity_platform" not in sys.modules:
+    ha_entity_platform = types.ModuleType("homeassistant.helpers.entity_platform")
+
+    class AddEntitiesCallback:
+        """Stub for the entity_platform callback type used only as a hint."""
+
+    ha_entity_platform.AddEntitiesCallback = AddEntitiesCallback
+    sys.modules["homeassistant.helpers.entity_platform"] = ha_entity_platform
+    sys.modules["homeassistant.helpers"].entity_platform = ha_entity_platform
+
+if "homeassistant.components.binary_sensor" not in sys.modules:
+    ha_binary_sensor = types.ModuleType("homeassistant.components.binary_sensor")
+
+    class BinarySensorDeviceClass:
+        MOISTURE = "moisture"
+        PROBLEM = "problem"
+
+    class BinarySensorEntity:
+        """Minimal stub base class."""
+
+    ha_binary_sensor.BinarySensorDeviceClass = BinarySensorDeviceClass
+    ha_binary_sensor.BinarySensorEntity = BinarySensorEntity
+    sys.modules["homeassistant.components.binary_sensor"] = ha_binary_sensor
+    sys.modules["homeassistant.components"].binary_sensor = ha_binary_sensor
 
 if "homeassistant.components.http" not in sys.modules:
     ha_http = types.ModuleType("homeassistant.components.http")

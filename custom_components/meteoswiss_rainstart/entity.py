@@ -40,7 +40,7 @@ class RainStartEntity(CoordinatorEntity[MeteoSwissRainStartCoordinator]):
 
 
 def assign_entity_id(entity: RainStartEntity, entry: ConfigEntry, key: str, platform: str) -> None:
-    """Set a slug entity_id; keep the v1 next-rain id when flagged."""
+    """Set the location-slug entity_id."""
     entity_id = assigned_entity_id(entry.data, key, platform)
     if entity_id:
         entity.entity_id = entity_id

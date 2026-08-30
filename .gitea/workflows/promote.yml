@@ -1,0 +1,28 @@
+# Push Gitea main to GitHub. Use after you want a public/HACS release.
+# Secret GITHUB_PUSH_URL: https://x-access-token:TOKEN@github.com/owner/repo.git
+# GitHub Actions then stamps, tags, and creates the Release. It can push
+# that commit and tag back if GITEA_PUSH_URL is set on GitHub.
+name: Promote to GitHub
+on:
+  workflow_dispatch:
+
+jobs:
+  promote:
+    name: Push main to GitHub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push main
+        env:
+          GITHUB_PUSH_URL: ${{ secrets.GITHUB_PUSH_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GITHUB_PUSH_URL}" ]; then
+            echo "Set repository secret GITHUB_PUSH_URL."
+            exit 1
+          fi
+          git push "${GITHUB_PUSH_URL}" HEAD:refs/heads/main

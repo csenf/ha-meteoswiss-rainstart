@@ -1,0 +1,106 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "MeteoSwiss Regen-Start",
+        "description": "Liest das MeteoSwiss-Niederschlagsradar an Ihrem Pin (rund 1 km Zellen, 5-Minuten-Schritte). Tippen Sie einen Ortsnamen. Dieser Name beschriftet das Gerät.\n\nParser-Problem bleibt aus, solange das inoffizielle Radar-JSON lesbar ist. Ist er an, ist parse_ok falsch. Ignorieren Sie die Regensensoren. Sie sind nicht verfügbar.\n\nWas tun, wenn Parser-Problem an ist:\n1. Öffnen Sie die Entität und lesen Sie parse_detail.\n2. Öffnen Sie die MeteoSwiss-Niederschlagskarte. Ist die Karte tot, warten Sie.\n3. Lädt die Karte noch, haben sich JSON oder Legende geändert. Prüfen Sie das Home-Assistant-Log.\n4. Passen Sie radar_nowcast.py an, übertragen Sie den Code, und starten Sie Home Assistant neu. Neu laden reicht nicht.\n5. Nach einer guten Abfrage geht er aus. Schliessen Sie die Benachrichtigung.\n\nEin Netzfehler setzt diesen Melder nicht. Er macht die Regensensoren nur nicht verfügbar.",
+        "data": {
+          "location": "Standort",
+          "location_name": "Ortsname",
+          "threshold_mm": "Niederschwellwert (mm/h)",
+          "poll_interval": "Abfrageintervall (Sekunden)"
+        },
+        "data_description": {
+          "location": "Setzen Sie den Pin aufs Haus. Die Abdeckung gilt nur für die Schweiz.",
+          "location_name": "Ein Name, den Sie tippen. Er steht auf dem Gerät und in den Entitätsnamen.",
+          "threshold_mm": "Rate, die als Regen zählt. Das Radar nutzt Legendenstufen, keine exakten Millimeter.",
+          "poll_interval": "Wie oft Home Assistant das Radar-JSON holt (60 bis 3600 Sekunden)."
+        }
+      }
+    },
+    "error": {
+      "outside_switzerland": "Der Standort liegt ausserhalb der Schweizer Radar-Abdeckung.",
+      "invalid_location": "Wählen Sie einen Standort auf der Karte.",
+      "name_required": "Geben Sie einen Namen für diesen Standort ein.",
+      "threshold_invalid": "Der Schwellwert muss zwischen 0 und 100 mm/h liegen.",
+      "poll_interval_invalid": "Das Abfrageintervall muss zwischen 60 und 3600 Sekunden liegen."
+    },
+    "abort": {
+      "already_configured": "Dieser Standort ist bereits konfiguriert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "MeteoSwiss Regen-Start",
+        "description": "Liest das MeteoSwiss-Niederschlagsradar an Ihrem Pin (rund 1 km Zellen, 5-Minuten-Schritte). Tippen Sie einen Ortsnamen. Dieser Name beschriftet das Gerät.\n\nParser-Problem bleibt aus, solange das inoffizielle Radar-JSON lesbar ist. Ist er an, ist parse_ok falsch. Ignorieren Sie die Regensensoren. Sie sind nicht verfügbar.\n\nWas tun, wenn Parser-Problem an ist:\n1. Öffnen Sie die Entität und lesen Sie parse_detail.\n2. Öffnen Sie die MeteoSwiss-Niederschlagskarte. Ist die Karte tot, warten Sie.\n3. Lädt die Karte noch, haben sich JSON oder Legende geändert. Prüfen Sie das Home-Assistant-Log.\n4. Passen Sie radar_nowcast.py an, übertragen Sie den Code, und starten Sie Home Assistant neu. Neu laden reicht nicht.\n5. Nach einer guten Abfrage geht er aus. Schliessen Sie die Benachrichtigung.\n\nEin Netzfehler setzt diesen Melder nicht. Er macht die Regensensoren nur nicht verfügbar.",
+        "data_description": {
+          "location": "Setzen Sie den Pin aufs Haus. Die Abdeckung gilt nur für die Schweiz.",
+          "location_name": "Ein Name, den Sie tippen. Er steht auf dem Gerät und in den Entitätsnamen.",
+          "threshold_mm": "Rate, die als Regen zählt. Das Radar nutzt Legendenstufen, keine exakten Millimeter.",
+          "poll_interval": "Wie oft Home Assistant das Radar-JSON holt (60 bis 3600 Sekunden)."
+        }
+      }
+    },
+    "error": {
+      "outside_switzerland": "Der Standort liegt ausserhalb der Schweizer Radar-Abdeckung.",
+      "invalid_location": "Wählen Sie einen Standort auf der Karte.",
+      "name_required": "Geben Sie einen Namen für diesen Standort ein.",
+      "threshold_invalid": "Der Schwellwert muss zwischen 0 und 100 mm/h liegen.",
+      "poll_interval_invalid": "Das Abfrageintervall muss zwischen 60 und 3600 Sekunden liegen.",
+      "already_configured": "Dieser Standort ist bereits konfiguriert."
+    }
+  },
+  "parser_problem": {
+    "title": "MeteoSwiss Regen-Start: Radar-Parse fehlgeschlagen",
+    "message": "Regen-Start für {location_name} kann den MeteoSwiss-Radar-Nowcast nicht mehr lesen ({detail}). Ignorieren Sie die anderen Sensoren. Sie sind nicht verfügbar.\n\n1. Öffnen Sie Parser-Problem und lesen Sie parse_detail.\n2. Prüfen Sie, ob die MeteoSwiss-Niederschlagskarte noch lädt.\n3. Lädt die Karte noch, haben sich das inoffizielle JSON oder die Farben geändert. Prüfen Sie das Log, passen Sie radar_nowcast.py an, übertragen Sie den Code, und starten Sie Home Assistant neu.",
+    "what_to_do": "Ignorieren Sie die Regensensoren. Lesen Sie parse_detail. Lädt die MeteoSwiss-Niederschlagskarte noch, hat sich das inoffizielle JSON geändert. Passen Sie radar_nowcast.py an, übertragen Sie den Code, und starten Sie Home Assistant neu."
+  },
+  "entity": {
+    "sensor": {
+      "next_rain_minutes": {
+        "name": "Nächster Regen in {location_name}"
+      },
+      "precipitation": {
+        "name": "Niederschlag in {location_name}"
+      },
+      "nearest_rain": {
+        "name": "Abstand zum Regen von {location_name}"
+      },
+      "rain_end_minutes": {
+        "name": "Regenende in {location_name}"
+      },
+      "data_age_minutes": {
+        "name": "Datenalter in {location_name}"
+      },
+      "next_fetch": {
+        "name": "Nächste Abfrage für {location_name}"
+      }
+    },
+    "binary_sensor": {
+      "raining": {
+        "name": "Regen in {location_name}"
+      },
+      "parser_problem": {
+        "name": "Parser-Problem in {location_name}",
+        "state": {
+          "off": "OK",
+          "on": "Defekt"
+        },
+        "state_attributes": {
+          "what_to_do": {
+            "name": "Was tun"
+          },
+          "parse_detail": {
+            "name": "Parse-Detail"
+          }
+        }
+      }
+    },
+    "image": {
+      "intensity_graph": {
+        "name": "Intensität in {location_name}"
+      }
+    }
+  }
+}

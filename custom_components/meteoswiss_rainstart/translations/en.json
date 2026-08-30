@@ -1,0 +1,106 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "MeteoSwiss Rain-Start",
+        "description": "Samples the MeteoSwiss precipitation radar at your pin (about 1 km cells, 5-minute steps). Type a location name. That name labels the device.\n\nParser problem stays off while the unofficial radar JSON decodes. When that flag is on, parse_ok is false. Ignore the rain sensors. They are unavailable.\n\nWhat to do when Parser problem is on:\n1. Open the entity and read parse_detail.\n2. Open the MeteoSwiss precipitation map. If the map is down, wait.\n3. If the map works, the JSON or legend changed. Check the Home Assistant log.\n4. Update radar_nowcast.py, deploy, and restart Home Assistant. Reload is not enough.\n5. After a good poll the flag turns off. Dismiss the notification.\n\nA network error does not set this flag. It only leaves the rain sensors unavailable.",
+        "data": {
+          "location": "Location",
+          "location_name": "Location name",
+          "threshold_mm": "Precipitation threshold (mm/h)",
+          "poll_interval": "Poll interval (seconds)"
+        },
+        "data_description": {
+          "location": "Pin the house. Coverage is Switzerland only.",
+          "location_name": "A name you type. Used on the device and in entity names.",
+          "threshold_mm": "Rate that counts as rain. The radar uses legend bins, not exact millimetres.",
+          "poll_interval": "How often Home Assistant downloads the radar JSON (60 to 3600 seconds)."
+        }
+      }
+    },
+    "error": {
+      "outside_switzerland": "Location is outside Switzerland radar coverage.",
+      "invalid_location": "Choose a location on the map.",
+      "name_required": "Enter a name for this location.",
+      "threshold_invalid": "Threshold must be between 0 and 100 mm/h.",
+      "poll_interval_invalid": "Poll interval must be between 60 and 3600 seconds."
+    },
+    "abort": {
+      "already_configured": "This location is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "MeteoSwiss Rain-Start",
+        "description": "Samples the MeteoSwiss precipitation radar at your pin (about 1 km cells, 5-minute steps). Type a location name. That name labels the device.\n\nParser problem stays off while the unofficial radar JSON decodes. When that flag is on, parse_ok is false. Ignore the rain sensors. They are unavailable.\n\nWhat to do when Parser problem is on:\n1. Open the entity and read parse_detail.\n2. Open the MeteoSwiss precipitation map. If the map is down, wait.\n3. If the map works, the JSON or legend changed. Check the Home Assistant log.\n4. Update radar_nowcast.py, deploy, and restart Home Assistant. Reload is not enough.\n5. After a good poll the flag turns off. Dismiss the notification.\n\nA network error does not set this flag. It only leaves the rain sensors unavailable.",
+        "data_description": {
+          "location": "Pin the house. Coverage is Switzerland only.",
+          "location_name": "A name you type. Used on the device and in entity names.",
+          "threshold_mm": "Rate that counts as rain. The radar uses legend bins, not exact millimetres.",
+          "poll_interval": "How often Home Assistant downloads the radar JSON (60 to 3600 seconds)."
+        }
+      }
+    },
+    "error": {
+      "outside_switzerland": "Location is outside Switzerland radar coverage.",
+      "invalid_location": "Choose a location on the map.",
+      "name_required": "Enter a name for this location.",
+      "threshold_invalid": "Threshold must be between 0 and 100 mm/h.",
+      "poll_interval_invalid": "Poll interval must be between 60 and 3600 seconds.",
+      "already_configured": "This location is already configured."
+    }
+  },
+  "parser_problem": {
+    "title": "MeteoSwiss Rain-Start: radar parse failed",
+    "message": "Rain-start for {location_name} can no longer parse the MeteoSwiss radar nowcast ({detail}). Ignore the other sensors. They are unavailable.\n\n1. Open Parser problem and read parse_detail.\n2. Check that the MeteoSwiss precipitation map still loads.\n3. If the map works, the unofficial JSON or colours changed. Check the log, fix radar_nowcast.py, deploy, and restart Home Assistant.",
+    "what_to_do": "Ignore the rain sensors. Read parse_detail. If the MeteoSwiss precipitation map still loads, the unofficial JSON changed. Fix radar_nowcast.py, deploy, and restart Home Assistant."
+  },
+  "entity": {
+    "sensor": {
+      "next_rain_minutes": {
+        "name": "Next rain in {location_name}"
+      },
+      "precipitation": {
+        "name": "Precipitation in {location_name}"
+      },
+      "nearest_rain": {
+        "name": "Nearest rain from {location_name}"
+      },
+      "rain_end_minutes": {
+        "name": "Rain end in {location_name}"
+      },
+      "data_age_minutes": {
+        "name": "Data age in {location_name}"
+      },
+      "next_fetch": {
+        "name": "Next fetch for {location_name}"
+      }
+    },
+    "binary_sensor": {
+      "raining": {
+        "name": "Raining in {location_name}"
+      },
+      "parser_problem": {
+        "name": "Parser problem in {location_name}",
+        "state": {
+          "off": "OK",
+          "on": "Broken"
+        },
+        "state_attributes": {
+          "what_to_do": {
+            "name": "What to do"
+          },
+          "parse_detail": {
+            "name": "Parse detail"
+          }
+        }
+      }
+    },
+    "image": {
+      "intensity_graph": {
+        "name": "Intensity in {location_name}"
+      }
+    }
+  }
+}

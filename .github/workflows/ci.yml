@@ -1,0 +1,80 @@
+# Test on every push/PR. On main: stamp manifest.json, SemVer tag, and
+# publish a GitHub Release (HACS uses the release; HA reads the stamp).
+name: CI / Test & Tag
+run-name: ${{ github.event.head_commit.message }}
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run unit tests
+        run: python -m pytest tests/ -m "not integration" -q
+
+      - name: Shell syntax check
+        run: |
+          bash -n scripts/ci-tag-release.sh
+          bash -n scripts/deploy.sh
+          bash -n scripts/stamp-version.sh
+          bash -n scripts/dev-version.sh
+
+  tag:
+    name: Tag release
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Stamp manifest, tag, and push
+        id: version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          bash scripts/ci-tag-release.sh | tee /tmp/release.out
+          grep '^VERSION=' /tmp/release.out >> "$GITHUB_OUTPUT"
+          grep '^RELEASED=' /tmp/release.out >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release
+        if: steps.version.outputs.RELEASED == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "v${{ steps.version.outputs.VERSION }}" --title "v${{ steps.version.outputs.VERSION }}" --generate-notes
+
+      - name: Sync release commit and tag back to Gitea
+        if: steps.version.outputs.RELEASED == '1'
+        env:
+          GITEA_PUSH_URL: ${{ secrets.GITEA_PUSH_URL }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GITEA_PUSH_URL}" ]; then
+            echo "GITEA_PUSH_URL not set; skip sync back."
+            exit 0
+          fi
+          git push "${GITEA_PUSH_URL}" HEAD:refs/heads/main
+          git push "${GITEA_PUSH_URL}" "v${VERSION}"

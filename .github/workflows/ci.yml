@@ -37,6 +37,8 @@ jobs:
           bash -n scripts/stamp-version.sh
           bash -n scripts/dev-version.sh
           bash -n scripts/promote-to-github.sh
+          bash -n scripts/reachable-semver-tags.sh
+          bash -n scripts/ensure-github-release.sh
 
   tag:
     name: Tag release
@@ -61,10 +63,10 @@ jobs:
           grep '^RELEASED=' /tmp/release.out >> "$GITHUB_OUTPUT"
 
       - name: Publish GitHub Release
-        if: steps.version.outputs.RELEASED == '1'
+        if: steps.version.outputs.VERSION != ''
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "v${{ steps.version.outputs.VERSION }}" --title "v${{ steps.version.outputs.VERSION }}" --generate-notes
+        run: bash scripts/ensure-github-release.sh "${{ steps.version.outputs.VERSION }}"
 
       - name: Sync release commit and tag back to Gitea
         if: steps.version.outputs.RELEASED == '1'

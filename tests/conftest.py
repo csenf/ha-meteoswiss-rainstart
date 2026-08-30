@@ -237,3 +237,16 @@ if "homeassistant.components.diagnostics" not in sys.modules:
     ha_diag.async_redact_data = async_redact_data
     sys.modules["homeassistant.components.diagnostics"] = ha_diag
     sys.modules["homeassistant.components"].diagnostics = ha_diag
+
+if "homeassistant.components.http" not in sys.modules:
+    ha_http = types.ModuleType("homeassistant.components.http")
+
+    class StaticPathConfig:
+        def __init__(self, url_path, path, cache_headers=False):
+            self.url_path = url_path
+            self.path = path
+            self.cache_headers = cache_headers
+
+    ha_http.StaticPathConfig = StaticPathConfig
+    sys.modules["homeassistant.components.http"] = ha_http
+    sys.modules["homeassistant.components"].http = ha_http

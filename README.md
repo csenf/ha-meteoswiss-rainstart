@@ -39,6 +39,26 @@ Type a location name and set the pin on the map. That name labels the device. Af
 
 A download or network error leaves the rain sensors `unavailable`. It does not turn Parser problem on.
 
+## Lovelace card
+
+After the integration is loaded once, add this resource under **Settings → Dashboards → Resources**:
+
+```yaml
+url: /meteoswiss_rainstart/frontend/rainstart-card.js
+type: module
+```
+
+Then add a card to your dashboard:
+
+```yaml
+type: custom:meteoswiss-rainstart-card
+entity: sensor.meteoswiss_rainstart_belp_next_rain_minutes
+```
+
+The card reads the next-rain sensor and discovers the related entities for the same location. It shows a rain countdown, nearest-rain distance, a measured/forecast timeline, and footer stats (current rate, rain end, radar age). Parser problem replaces the rain summary with a red banner.
+
+Legacy installs that still use `sensor.meteoswiss_rainstart_next_rain_minutes` work as long as the sibling entities use the location slug from setup.
+
 ## When Parser problem is on
 
 1. Ignore the rain sensors. They are `unavailable`.

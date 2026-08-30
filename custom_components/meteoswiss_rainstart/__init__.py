@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .coordinator import MeteoSwissRainStartCoordinator
+from .frontend_register import async_register_frontend
 from .location import migrate_v1_data
+
+_MANIFEST = json.loads((Path(__file__).parent / "manifest.json").read_text(encoding="utf-8"))
 
 PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.IMAGE]
 
@@ -25,6 +31,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up MeteoSwiss Rain-Start from a config entry."""
+    await async_register_frontend(hass, str(_MANIFEST["version"]))
     coordinator = MeteoSwissRainStartCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
 

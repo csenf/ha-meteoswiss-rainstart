@@ -30,6 +30,9 @@ jobs:
       - name: Run unit tests
         run: python -m pytest tests/ -m "not integration" -q
 
+      - name: Run frontend card model tests
+        run: node --test tests/frontend/test_rainstart_card_model.mjs
+
       - name: Shell syntax check
         run: |
           bash -n scripts/ci-tag-release.sh

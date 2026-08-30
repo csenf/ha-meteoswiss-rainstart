@@ -14,13 +14,6 @@ def test_parse_slugged_next_rain_entity() -> None:
         "sensor.meteoswiss_rainstart_belp_next_rain_minutes"
     )
     assert parsed.slug == "belp"
-    assert parsed.legacy_primary is False
-
-
-def test_parse_legacy_next_rain_entity() -> None:
-    parsed = parse_next_rain_entity_id("sensor.meteoswiss_rainstart_next_rain_minutes")
-    assert parsed.slug is None
-    assert parsed.legacy_primary is True
 
 
 def test_parse_rejects_unrelated_entity() -> None:
@@ -43,20 +36,6 @@ def test_related_entity_ids_for_named_location() -> None:
     assert ids["intensity_graph"] == (
         "image.meteoswiss_rainstart_belp_intensity_graph"
     )
-
-
-def test_related_entity_ids_legacy_primary_uses_location_name() -> None:
-    ids = related_entity_ids(
-        "sensor.meteoswiss_rainstart_next_rain_minutes",
-        location_name="Belp",
-    )
-    assert ids["next_rain"] == "sensor.meteoswiss_rainstart_next_rain_minutes"
-    assert ids["precipitation"] == "sensor.meteoswiss_rainstart_belp_precipitation"
-
-
-def test_related_entity_ids_legacy_requires_location_name() -> None:
-    with pytest.raises(ValueError, match="location_name"):
-        related_entity_ids("sensor.meteoswiss_rainstart_next_rain_minutes")
 
 
 def test_card_roles_cover_all_related_keys() -> None:

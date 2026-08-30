@@ -31,6 +31,7 @@ if "homeassistant" not in sys.modules:
         IMAGE = "image"
 
     ha_const.Platform = Platform
+    ha_const.EVENT_HOMEASSISTANT_STARTED = "homeassistant_started"
     sys.modules["homeassistant.const"] = ha_const
     ha.const = ha_const
 
@@ -46,7 +47,14 @@ if "homeassistant" not in sys.modules:
         """Minimal stub for type checking / construction in tests."""
         pass
 
+    class CoreState:
+        not_running = "not_running"
+        starting = "starting"
+        running = "running"
+        stopping = "stopping"
+
     ha_core.HomeAssistant = HomeAssistant
+    ha_core.CoreState = CoreState
     sys.modules["homeassistant.core"] = ha_core
     ha.core = ha_core
 

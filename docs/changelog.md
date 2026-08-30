@@ -4,6 +4,8 @@ Public history starts at **v0.2.0** (`chore: public root at v0.2.0`). Older Gite
 
 | Date | Change |
 |------|--------|
+| 2026-08-30 | Removed v1 config-entry migration and legacy (unslugged) entity-id support; no installs predate the public v0.2.0 root, so `_legacy_entity_id` and the coordinate-label fallback name were dead code |
+| 2026-08-30 | Fix: Lovelace card now auto-registers as a resource in storage-mode dashboards; previously only the static JS was served, so the card never appeared without a manual Resources entry |
 | 2026-08-30 | Gitea pulls public GitHub after promote (no `GITEA_PUSH_URL` on GitHub) |
 | 2026-08-30 | Promote and release only use SemVer tags reachable from HEAD; pre-public `v0.2.1`–`v0.7.0` stay on Gitea as `archive/*` |
 | 2026-08-30 | Promote to GitHub uses a write-enabled SSH deploy key (`GH_DEPLOY_KEY`) instead of a rotating PAT |

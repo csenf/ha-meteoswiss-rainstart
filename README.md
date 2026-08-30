@@ -23,7 +23,7 @@ Type a location name and set the pin on the map. That name labels the device. Af
 
 ## Entities
 
-`{slug}` comes from the location name. A v1 next-rain sensor may keep the old id `sensor.meteoswiss_rainstart_next_rain_minutes`.
+`{slug}` comes from the location name.
 
 | Entity | What it tells you |
 |--------|-------------------|
@@ -41,14 +41,7 @@ A download or network error leaves the rain sensors `unavailable`. It does not t
 
 ## Lovelace card
 
-After the integration is loaded once, add this resource under **Settings → Dashboards → Resources**:
-
-```yaml
-url: /meteoswiss_rainstart/frontend/rainstart-card.js
-type: module
-```
-
-Then add a card to your dashboard:
+The integration registers its bundled card as a Lovelace resource automatically (storage-mode dashboards, the default). After installing or updating, restart Home Assistant, then add a card to your dashboard:
 
 ```yaml
 type: custom:meteoswiss-rainstart-card
@@ -57,7 +50,19 @@ entity: sensor.meteoswiss_rainstart_belp_next_rain_minutes
 
 The card reads the next-rain sensor and discovers the related entities for the same location. It shows a rain countdown, nearest-rain distance, a measured/forecast timeline, and footer stats (current rate, rain end, radar age). Parser problem replaces the rain summary with a red banner.
 
-Legacy installs that still use `sensor.meteoswiss_rainstart_next_rain_minutes` work as long as the sibling entities use the location slug from setup.
+### If the card is not in the card picker
+
+- Auto-registration only works for **storage-mode** dashboards (the default). If your dashboard is defined in `configuration.yaml` (`lovelace: mode: yaml`), add the resource by hand:
+
+  ```yaml
+  lovelace:
+    resources:
+      - url: /meteoswiss_rainstart/frontend/rainstart-card.js
+        type: module
+  ```
+
+- Auto-registration runs once Home Assistant has fully started. If the resource is missing right after a fresh install, restart Home Assistant once more.
+- After an update, hard-refresh the browser (or clear the app cache on the Companion App) if the card keeps rendering the previous version.
 
 ## When Parser problem is on
 

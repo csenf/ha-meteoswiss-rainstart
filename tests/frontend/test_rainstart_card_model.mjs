@@ -41,13 +41,10 @@ describe("parseNextRainEntityId", () => {
       "sensor.meteoswiss_rainstart_belp_next_rain_minutes",
     );
     assert.equal(parsed.slug, "belp");
-    assert.equal(parsed.legacyPrimary, false);
   });
 
-  it("parses legacy primary entity", () => {
-    const parsed = parseNextRainEntityId("sensor.meteoswiss_rainstart_next_rain_minutes");
-    assert.equal(parsed.slug, null);
-    assert.equal(parsed.legacyPrimary, true);
+  it("rejects an unrelated entity", () => {
+    assert.throws(() => parseNextRainEntityId("sensor.meteoswiss_rainstart_belp_precipitation"));
   });
 });
 

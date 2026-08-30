@@ -5,8 +5,6 @@ import pytest
 from meteoswiss_rainstart.const import CONF_LOCATION, CONF_LOCATION_NAME
 from meteoswiss_rainstart.location import (
     assigned_entity_id,
-    format_coordinate_label,
-    migrate_v1_data,
     normalize_location_name,
     parse_location_from_input,
     slugify_location_name,
@@ -25,10 +23,6 @@ def test_slugify_umlaut():
 
 def test_slugify_spaces_and_punctuation():
     assert slugify_location_name("Garden Shed!") == "garden_shed"
-
-
-def test_format_coordinate_label():
-    assert format_coordinate_label(46.8912, 7.5023) == "46.89, 7.50"
 
 
 def test_conf_keys_exist():
@@ -72,29 +66,11 @@ def test_unique_id_and_conflict():
     assert unique_id_in_use(entries, uid, "b") is True
 
 
-def test_assigned_entity_id_legacy_and_named():
-    assert assigned_entity_id({"_legacy_entity_id": True}, "next_rain_minutes", "sensor") == (
-        "sensor.meteoswiss_rainstart_next_rain_minutes"
-    )
+def test_assigned_entity_id_from_location_name():
     assert assigned_entity_id(
         {"location_name": "Belp"}, "precipitation", "sensor"
     ) == "sensor.meteoswiss_rainstart_belp_precipitation"
     assert assigned_entity_id({}, "precipitation", "sensor") is None
-
-
-def test_migrate_v1_data_adds_name_and_legacy_flag():
-    data, title = migrate_v1_data({"latitude": 46.8912, "longitude": 7.5023})
-    assert title == "46.89, 7.50"
-    assert data["location_name"] == title
-    assert data["_legacy_entity_id"] is True
-
-
-def test_migrate_v1_data_keeps_existing_name():
-    data, title = migrate_v1_data(
-        {"latitude": 46.89, "longitude": 7.50, "location_name": "Belp"}
-    )
-    assert title == "Belp"
-    assert "_legacy_entity_id" not in data
 
 
 def test_entity_id_slug_from_name():

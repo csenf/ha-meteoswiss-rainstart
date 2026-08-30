@@ -25,11 +25,6 @@ def slugify_location_name(name: str) -> str:
     return slug or "location"
 
 
-def format_coordinate_label(latitude: float, longitude: float) -> str:
-    """Human-readable coordinate fallback (v1 migration only)."""
-    return f"{latitude:.2f}, {longitude:.2f}"
-
-
 def parse_location_from_input(location: object) -> tuple[float, float]:
     """Extract lat/lon from a LocationSelector dict."""
     if not isinstance(location, dict):
@@ -74,20 +69,7 @@ def entity_id_for_location(location_name: str) -> str:
 
 def assigned_entity_id(entry_data: dict, key: str, platform: str) -> str | None:
     """Entity id for a new entity, or None to let Home Assistant assign one."""
-    if key == SENSOR_KEY and entry_data.get("_legacy_entity_id"):
-        return f"sensor.{DOMAIN}_{SENSOR_KEY}"
     name = entry_data.get(CONF_LOCATION_NAME)
     if name:
         return entity_id_for(name, key, platform)
     return None
-
-
-def migrate_v1_data(data: dict) -> tuple[dict, str]:
-    """Add location_name and the legacy entity-id flag to a v1 entry."""
-    updated = dict(data)
-    if CONF_LOCATION_NAME not in updated:
-        name = format_coordinate_label(updated[CONF_LATITUDE], updated[CONF_LONGITUDE])
-        updated[CONF_LOCATION_NAME] = name
-        updated["_legacy_entity_id"] = True
-        return updated, name
-    return updated, str(updated[CONF_LOCATION_NAME])

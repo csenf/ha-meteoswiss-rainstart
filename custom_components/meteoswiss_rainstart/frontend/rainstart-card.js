@@ -105,11 +105,9 @@ class MeteoSwissRainStartCard extends HTMLElement {
     }
     ensureCardStyles();
 
-    const nextRain = this._hass.states[this._config.entity];
-    const locationName = nextRain?.attributes?.location_name ?? null;
     let entityIds;
     try {
-      entityIds = relatedEntityIds(this._config.entity, locationName);
+      entityIds = relatedEntityIds(this._config.entity);
     } catch (error) {
       this.innerHTML = `<ha-card class="rainstart-card"><div class="content error">${error.message}</div></ha-card>`;
       return;

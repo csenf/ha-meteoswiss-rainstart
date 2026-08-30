@@ -28,7 +28,6 @@ from .const import (
     MIN_THRESHOLD_MM,
 )
 from .location import (
-    format_coordinate_label,
     normalize_location_name,
     parse_location_from_input,
     unique_id_for_coordinates,

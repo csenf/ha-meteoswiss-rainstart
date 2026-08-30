@@ -31,6 +31,7 @@ Use domain `meteoswiss_rainstart` — do not reuse `meteoswiss` (Rudd-O's foreca
 - Setup requires a user-entered location name. No catalog auto-name.
 - Rates are legend lower bounds, not true millimetres per hour.
 - After a code deploy, restart Home Assistant. Reload does not reimport modules.
+- No v1 config-entry migration and no legacy (unslugged) entity-id support. Public history starts at v0.2.0, after location naming and slugged entity ids were already in place, so that compatibility code (`_legacy_entity_id`, `migrate_v1_data`, coordinate-label fallback name) was dead weight and has been removed.
 
 ### Entities
 

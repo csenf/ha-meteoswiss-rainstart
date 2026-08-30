@@ -15,57 +15,20 @@ const ROLE_KEYS = {
   intensity_graph: ["image", "intensity_graph"],
 };
 
-const LEGACY_PRIMARY = `sensor.${DOMAIN}_${SENSOR_KEY}`;
-
-const UMLAUT_MAP = {
-  ä: "ae",
-  ö: "oe",
-  ü: "ue",
-  ß: "ss",
-  Ä: "Ae",
-  Ö: "Oe",
-  Ü: "Ue",
-};
-
-export function slugifyLocationName(name) {
-  let text = String(name ?? "");
-  for (const [from, to] of Object.entries(UMLAUT_MAP)) {
-    text = text.split(from).join(to);
-  }
-  text = text
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-  const slug = text.replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
-  return slug || "location";
-}
-
 export function parseNextRainEntityId(entityId) {
-  if (entityId === LEGACY_PRIMARY) {
-    return { slug: null, legacyPrimary: true };
-  }
   const prefix = `sensor.${DOMAIN}_`;
   const suffix = `_${SENSOR_KEY}`;
   if (entityId.startsWith(prefix) && entityId.endsWith(suffix)) {
     const slug = entityId.slice(prefix.length, -suffix.length);
     if (slug) {
-      return { slug, legacyPrimary: false };
+      return { slug };
     }
   }
   throw new Error("entity must be a MeteoSwiss Rain-Start next rain sensor");
 }
 
-export function relatedEntityIds(primaryEntityId, locationName = null) {
-  const parsed = parseNextRainEntityId(primaryEntityId);
-  let slug;
-  if (parsed.legacyPrimary) {
-    if (!locationName) {
-      throw new Error("location_name is required for legacy next rain entity");
-    }
-    slug = slugifyLocationName(locationName);
-  } else {
-    slug = parsed.slug;
-  }
+export function relatedEntityIds(primaryEntityId) {
+  const { slug } = parseNextRainEntityId(primaryEntityId);
   const related = {};
   for (const [role, [platform, key]] of Object.entries(ROLE_KEYS)) {
     related[role] = `${platform}.${DOMAIN}_${slug}_${key}`;

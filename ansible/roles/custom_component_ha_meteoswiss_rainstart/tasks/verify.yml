@@ -1,0 +1,14 @@
+---
+- name: Verify manifest.json exists on Home Assistant
+  ansible.builtin.stat:
+    path: "{{ meteoswiss_rainstart_install_dir }}/manifest.json"
+  register: meteoswiss_rainstart_manifest_stat
+  failed_when: not meteoswiss_rainstart_manifest_stat.stat.exists
+
+- name: Verify stamped manifest version
+  ansible.builtin.slurp:
+    src: "{{ meteoswiss_rainstart_install_dir }}/manifest.json"
+  register: meteoswiss_rainstart_manifest_verify
+  failed_when: >-
+    (meteoswiss_rainstart_manifest_verify.content | b64decode | from_json).version
+    != meteoswiss_rainstart_resolved_version

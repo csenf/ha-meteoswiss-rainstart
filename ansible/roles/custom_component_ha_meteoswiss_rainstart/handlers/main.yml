@@ -1,0 +1,6 @@
+---
+- name: Restart Home Assistant
+  ansible.builtin.command:
+    cmd: "{{ meteoswiss_rainstart_ha_restart_command }}"
+  become: true
+  when: meteoswiss_rainstart_ha_restart_command | length > 0

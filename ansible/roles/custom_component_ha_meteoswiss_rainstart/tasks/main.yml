@@ -1,0 +1,52 @@
+---
+- name: Ensure custom_components parent exists
+  ansible.builtin.file:
+    path: "{{ meteoswiss_rainstart_install_dir | dirname }}"
+    state: directory
+    mode: "0755"
+  become: true
+  tags:
+    - custom_component_ha_meteoswiss_rainstart
+
+- name: Deploy integration tree to Home Assistant
+  ansible.posix.synchronize:
+    src: "{{ meteoswiss_rainstart_component_src }}/"
+    dest: "{{ meteoswiss_rainstart_install_dir }}/"
+    delete: true
+    rsync_opts: "{{ meteoswiss_rainstart_rsync_opts }}"
+  notify: Restart Home Assistant
+  tags:
+    - custom_component_ha_meteoswiss_rainstart
+
+- ansible.builtin.include_tasks: resolve_version.yml
+  tags:
+    - custom_component_ha_meteoswiss_rainstart
+
+- name: Read deployed manifest.json
+  ansible.builtin.slurp:
+    src: "{{ meteoswiss_rainstart_install_dir }}/manifest.json"
+  register: meteoswiss_rainstart_manifest_slurp
+  tags:
+    - custom_component_ha_meteoswiss_rainstart
+
+- name: Stamp manifest.json version for Home Assistant
+  ansible.builtin.copy:
+    dest: "{{ meteoswiss_rainstart_install_dir }}/manifest.json"
+    mode: "0644"
+    content: >-
+      {{ meteoswiss_rainstart_manifest_data | to_nice_json }}
+  vars:
+    meteoswiss_rainstart_manifest_data: >-
+      {{
+        meteoswiss_rainstart_manifest_slurp.content
+        | b64decode
+        | from_json
+        | combine({'version': meteoswiss_rainstart_resolved_version})
+      }}
+  notify: Restart Home Assistant
+  tags:
+    - custom_component_ha_meteoswiss_rainstart
+
+- ansible.builtin.include_tasks: verify.yml
+  tags:
+    - custom_component_ha_meteoswiss_rainstart

@@ -1,0 +1,38 @@
+---
+- name: Resolve version via dev-version.sh when not provided
+  ansible.builtin.command:
+    argv:
+      - bash
+      - scripts/dev-version.sh
+    chdir: "{{ meteoswiss_rainstart_repo_root }}"
+  delegate_to: localhost
+  register: meteoswiss_rainstart_dev_version
+  changed_when: false
+  when: meteoswiss_rainstart_version | length == 0
+
+- name: Set version from dev-version.sh
+  ansible.builtin.set_fact:
+    meteoswiss_rainstart_resolved_version: >-
+      {{
+        (meteoswiss_rainstart_dev_version.stdout_lines
+        | select('match', '^VERSION=')
+        | list | last).split('=', 1)[1]
+      }}
+  when:
+    - meteoswiss_rainstart_version | length == 0
+    - meteoswiss_rainstart_dev_version.rc == 0
+
+- name: Set version from deploy input
+  ansible.builtin.set_fact:
+    meteoswiss_rainstart_resolved_version: "{{ meteoswiss_rainstart_version }}"
+  when: meteoswiss_rainstart_version | length > 0
+
+- name: Require resolved version
+  ansible.builtin.assert:
+    that:
+      - meteoswiss_rainstart_resolved_version is defined
+      - meteoswiss_rainstart_resolved_version | length > 0
+    fail_msg: >-
+      Set meteoswiss_rainstart_version via workflow input (-e meteoswiss_rainstart_version=X.Y.Z)
+      or ensure scripts/dev-version.sh succeeds in the submodule checkout (manifest.json base
+      version and git tags required).

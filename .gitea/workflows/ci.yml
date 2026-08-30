@@ -1,6 +1,7 @@
 # Test on every push/PR. Do not tag or create GitHub Releases here.
-# Optional: set ANSIBLE_DISPATCH_URL and ANSIBLE_REPO_TOKEN to deploy
-# the Gitea checkout via Ansible after tests on main.
+# Optional secrets on private Gitea (not GitHub):
+#   ANSIBLE_DISPATCH_URL — workflow dispatch URL for your private orchestrator
+#   ANSIBLE_REPO_TOKEN   — token allowed to trigger that workflow
 name: CI / Test
 run-name: ${{ gitea.event.head_commit.message }}
 

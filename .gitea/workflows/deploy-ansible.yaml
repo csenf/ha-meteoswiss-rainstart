@@ -1,0 +1,37 @@
+---
+# Manual redeploy only — push-to-main deploy runs from ci.yml after tests pass.
+name: Deploy via Ansible (manual)
+env:
+  APP_NAME: ha-meteoswiss-rainstart
+on:
+  workflow_dispatch:
+
+jobs:
+  trigger-update-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger orchestrator deploy workflow
+        env:
+          ANSIBLE_DISPATCH_URL: ${{ secrets.ANSIBLE_DISPATCH_URL }}
+          ANSIBLE_REPO_TOKEN: ${{ secrets.ANSIBLE_REPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ANSIBLE_DISPATCH_URL}" ] || [ -z "${ANSIBLE_REPO_TOKEN}" ]; then
+            echo "Ansible dispatch secrets not set; skip."
+            exit 0
+          fi
+          http_code=$(curl -s -o /tmp/deploy-response.txt -w "%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: token ${{ secrets.ANSIBLE_REPO_TOKEN }}" \
+            "${ANSIBLE_DISPATCH_URL}" \
+            -d '{
+              "ref": "master",
+              "inputs": {
+                "app": "${{ env.APP_NAME }}",
+                "containerState": "started"
+              }
+            }')
+          echo "HTTP ${http_code}"
+          cat /tmp/deploy-response.txt
+          test "${http_code}" = "204" -o "${http_code}" = "200"

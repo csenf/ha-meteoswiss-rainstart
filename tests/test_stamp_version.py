@@ -46,7 +46,7 @@ def test_stamp_writes_version_into_manifest_json(tmp_path: Path) -> None:
 
     manifest = json.loads((target / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["version"] == "0.3.1"
-    assert (target / "VERSION").read_text(encoding="utf-8") == "0.3.1\n"
+    assert not (target / "VERSION").exists()
 
 
 def test_stamp_keeps_other_manifest_fields(tmp_path: Path) -> None:

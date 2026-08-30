@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Stamp the Home Assistant integration version that Core actually reads.
 #
-# Git tags are the source of truth. This script copies that version into:
-#   - VERSION          (optional local copy; never committed)
-#   - manifest.json    (required by HA; shown in Settings → Devices & Services)
+# Git tags are the source of truth. This script copies that version into
+# manifest.json (required by HA; shown in Settings → Devices & Services).
+# Do not write a VERSION file; Home Assistant does not read it.
 #
 # Usage: scripts/stamp-version.sh <x.y.z[+dev.gSHA]> <component_dir>
 set -euo pipefail
@@ -26,8 +26,6 @@ if [ ! -f "$MANIFEST" ]; then
   echo "manifest.json not found in ${TARGET}" >&2
   exit 1
 fi
-
-printf '%s\n' "$VERSION" > "${TARGET}/VERSION"
 
 python3 - "$MANIFEST" "$VERSION" <<'PY'
 import json

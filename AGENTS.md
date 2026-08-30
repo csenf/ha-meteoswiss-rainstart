@@ -27,9 +27,11 @@
 - GitHub is the public release source of truth (tag + Release + stamped
   `manifest.json`). Gitea holds full history and local Ansible deploys.
 - Develop on Gitea `main`. Promote with the Gitea workflow `Promote to GitHub`
-  (SSH deploy key secret `GH_DEPLOY_KEY`).
-- GitHub Actions runs `scripts/ci-tag-release.sh` on `main`, then can push
-  the release commit and tag back if `GITEA_PUSH_URL` is set.
+  (SSH deploy key secret `GH_DEPLOY_KEY`). That job waits, then pulls the
+  public GitHub repo back (HTTPS, no token) so a stamped release commit
+  and tag land on Gitea.
+- GitHub Actions runs `scripts/ci-tag-release.sh` on `main` and publishes
+  a Release. It does not push to Gitea.
 - Gitea Actions must not run `scripts/ci-tag-release.sh`.
 - Do not commit `VERSION`. Ansible / `scripts/deploy.sh` may stamp a
   local-only `x.y.z+dev.gSHA` from `scripts/dev-version.sh` onto the HA copy.

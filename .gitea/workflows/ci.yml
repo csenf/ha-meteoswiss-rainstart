@@ -39,7 +39,8 @@ jobs:
           bash -n scripts/dev-version.sh
           bash -n scripts/promote-to-github.sh
           bash -n scripts/reachable-semver-tags.sh
-          bash -n scripts/ensure-github-release.sh
+          bash -n scripts/sync-from-github.sh
+          bash -n scripts/wait-for-github.sh
 
   dispatch-ansible:
     name: Dispatch Ansible deploy

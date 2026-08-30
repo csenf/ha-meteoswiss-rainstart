@@ -1,9 +1,13 @@
-# Push Gitea main to GitHub over SSH. Secret GH_DEPLOY_KEY is a write-enabled
-# GitHub deploy private key (does not expire). GitHub Actions then stamps,
-# tags, and creates the Release.
+# Push Gitea main to GitHub over SSH, wait for GitHub to stamp/tag, then
+# pull the public repo back (HTTPS, no token). GitHub never opens this host.
 name: Promote to GitHub
 on:
   workflow_dispatch:
+    inputs:
+      sync_only:
+        description: Skip push; only pull GitHub main and SemVer tags back
+        type: boolean
+        default: false
 
 jobs:
   promote:
@@ -14,8 +18,22 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Push main and SemVer tags reachable from HEAD
+        if: ${{ inputs.sync_only != true && inputs.sync_only != 'true' }}
         env:
           GH_DEPLOY_KEY: ${{ secrets.GH_DEPLOY_KEY }}
         run: bash scripts/promote-to-github.sh
+
+      - name: Wait for GitHub to stamp a release commit
+        env:
+          TIMEOUT_SECS: "180"
+          INTERVAL_SECS: "10"
+        run: |
+          SINCE_SHA="$(git rev-parse HEAD)"
+          export SINCE_SHA
+          bash scripts/wait-for-github.sh
+
+      - name: Fast-forward Gitea from public GitHub
+        run: bash scripts/sync-from-github.sh

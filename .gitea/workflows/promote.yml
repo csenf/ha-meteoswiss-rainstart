@@ -26,3 +26,6 @@ jobs:
             exit 1
           fi
           git push "${GITHUB_PUSH_URL}" HEAD:refs/heads/main
+          while IFS= read -r tag; do
+            git push "${GITHUB_PUSH_URL}" "refs/tags/${tag}"
+          done < <(git tag -l 'v[0-9]*.[0-9]*.[0-9]*')

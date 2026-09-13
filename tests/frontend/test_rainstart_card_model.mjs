@@ -169,4 +169,17 @@ describe("renderTimelineSvg", () => {
     assert.match(svg, /var\(--cyan-color/);
     assert.doesNotMatch(svg, /#[0-9a-fA-F]{3,8}/);
   });
+
+  it("insets edge time labels and keeps them below the bars", () => {
+    const svg = renderTimelineSvg([
+      { rate_lo: 1, kind: "measurement", timestamp: "2026-08-29T17:25:00+02:00" },
+      { rate_lo: 0, kind: "forecast", timestamp: "2026-08-29T17:30:00+02:00" },
+      { rate_lo: 2, kind: "forecast", timestamp: "2026-08-29T17:40:00+02:00" },
+    ]);
+    assert.match(svg, /text-anchor="start".*17:25/);
+    assert.match(svg, /text-anchor="end".*17:40/);
+    assert.match(svg, /y="69"/);
+    // Tallest bar ends at plot bottom (4 + 52), above the label band.
+    assert.match(svg, /y="30\.0" width="116\.7" height="26\.0"/);
+  });
 });

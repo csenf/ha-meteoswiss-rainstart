@@ -216,27 +216,40 @@ export function buildCardViewModel({ entityIds, states }) {
   };
 }
 
+function timelineLabelAnchor(index, count, padX, width, barW) {
+  if (index === 0) {
+    return { x: padX, anchor: "start" };
+  }
+  if (index === count - 1) {
+    return { x: width - padX, anchor: "end" };
+  }
+  return { x: padX + index * barW + barW / 2, anchor: "middle" };
+}
+
 export function renderTimelineSvg(series, maxRate = null) {
   if (!series?.length) {
     return (
-      '<svg class="timeline" viewBox="0 0 400 72" preserveAspectRatio="none">' +
+      '<svg class="timeline" viewBox="0 0 400 72" preserveAspectRatio="xMidYMid meet">' +
       '<text x="200" y="40" text-anchor="middle" class="timeline-empty">No timeline</text></svg>'
     );
   }
 
   const width = 400;
   const height = 72;
-  const pad = 4;
+  const padX = 22;
+  const padTop = 4;
+  const labelBand = 16;
   const ymax = maxRate ?? Math.max(4, ...series.map((item) => item.rate_lo));
-  const plotW = width - pad * 2;
-  const plotH = height - pad * 2;
+  const plotW = width - padX * 2;
+  const plotH = height - padTop - labelBand;
   const barW = plotW / series.length;
+  const plotBottom = padTop + plotH;
   const bars = series
     .map((item, index) => {
       const rate = item.rate_lo ?? 0;
       const barHeight = ymax <= 0 ? 1 : Math.max(1, (rate / ymax) * plotH);
-      const x = pad + index * barW + 1;
-      const y = pad + plotH - barHeight;
+      const x = padX + index * barW + 1;
+      const y = plotBottom - barHeight;
       const fill =
         rate <= 0
           ? "var(--disabled-color, var(--divider-color))"
@@ -247,16 +260,23 @@ export function renderTimelineSvg(series, maxRate = null) {
         `width="${Math.max(1, barW - 2).toFixed(1)}" height="${barHeight.toFixed(1)}" fill="${fill}" rx="1"/>`;
     })
     .join("");
+  const labelY = height - 3;
   const labels = [0, Math.floor(series.length / 2), series.length - 1]
     .filter((value, index, all) => all.indexOf(value) === index)
     .map((index) => {
-      const x = pad + index * barW + barW / 2;
-      return `<text x="${x.toFixed(1)}" y="${height - 1}" text-anchor="middle" class="timeline-label">${clockLabel(series[index].timestamp)}</text>`;
+      const { x, anchor } = timelineLabelAnchor(
+        index,
+        series.length,
+        padX,
+        width,
+        barW,
+      );
+      return `<text x="${x.toFixed(1)}" y="${labelY}" text-anchor="${anchor}" class="timeline-label">${clockLabel(series[index].timestamp)}</text>`;
     })
     .join("");
 
   return (
-    `<svg class="timeline" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">` +
+    `<svg class="timeline" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet">` +
     bars +
     labels +
     "</svg>"

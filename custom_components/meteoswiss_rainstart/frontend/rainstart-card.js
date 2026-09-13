@@ -111,6 +111,7 @@ const CARD_STYLES = `
     display: block;
     height: 72px;
     width: 100%;
+    overflow: visible;
   }
   .timeline-label,
   .timeline-empty {

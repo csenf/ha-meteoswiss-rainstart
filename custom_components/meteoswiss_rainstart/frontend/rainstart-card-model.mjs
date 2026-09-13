@@ -238,14 +238,15 @@ export function buildCardViewModel({ entityIds, states }) {
   };
 }
 
-function timelineLabelAnchor(index, count, padX, width, barW) {
+/** Time labels sit slightly inset; bars use the full width. */
+function timelineLabelAnchor(index, count, labelInset, width, barW) {
   if (index === 0) {
-    return { x: padX, anchor: "start" };
+    return { x: labelInset, anchor: "start" };
   }
   if (index === count - 1) {
-    return { x: width - padX, anchor: "end" };
+    return { x: width - labelInset, anchor: "end" };
   }
-  return { x: padX + index * barW + barW / 2, anchor: "middle" };
+  return { x: index * barW + barW / 2, anchor: "middle" };
 }
 
 export function renderTimelineSvg(series, maxRate = null) {
@@ -258,11 +259,11 @@ export function renderTimelineSvg(series, maxRate = null) {
 
   const width = 400;
   const height = 72;
-  const padX = 22;
   const padTop = 4;
   const labelBand = 16;
+  const labelInset = 8;
   const ymax = maxRate ?? Math.max(4, ...series.map((item) => item.rate_lo));
-  const plotW = width - padX * 2;
+  const plotW = width;
   const plotH = height - padTop - labelBand;
   const barW = plotW / series.length;
   const plotBottom = padTop + plotH;
@@ -270,7 +271,7 @@ export function renderTimelineSvg(series, maxRate = null) {
     .map((item, index) => {
       const rate = item.rate_lo ?? 0;
       const barHeight = ymax <= 0 ? 1 : Math.max(1, (rate / ymax) * plotH);
-      const x = padX + index * barW + 1;
+      const x = index * barW;
       const y = plotBottom - barHeight;
       const fill =
         rate <= 0
@@ -278,8 +279,9 @@ export function renderTimelineSvg(series, maxRate = null) {
           : item.kind === "measurement"
             ? "var(--blue-color, var(--info-color))"
             : "var(--cyan-color, var(--info-color))";
+      const rx = index === 0 || index === series.length - 1 ? 0 : 1;
       return `<rect class="${item.kind}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" ` +
-        `width="${Math.max(1, barW - 2).toFixed(1)}" height="${barHeight.toFixed(1)}" fill="${fill}" rx="1"/>`;
+        `width="${barW.toFixed(1)}" height="${barHeight.toFixed(1)}" fill="${fill}" rx="${rx}"/>`;
     })
     .join("");
   const labelY = height - 3;
@@ -289,7 +291,7 @@ export function renderTimelineSvg(series, maxRate = null) {
       const { x, anchor } = timelineLabelAnchor(
         index,
         series.length,
-        padX,
+        labelInset,
         width,
         barW,
       );

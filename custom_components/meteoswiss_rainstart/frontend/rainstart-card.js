@@ -104,8 +104,9 @@ const CARD_STYLES = `
   .alert {
     padding: 0 var(--ha-space-4, 16px);
   }
+  /* Chart spans card width; header row keeps horizontal inset (weather-card pattern). */
   .forecast {
-    padding: 0 var(--ha-space-4, 16px);
+    padding: 0;
   }
   svg.timeline {
     display: block;

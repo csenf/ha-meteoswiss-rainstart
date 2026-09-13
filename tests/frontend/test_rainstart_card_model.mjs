@@ -184,7 +184,8 @@ describe("renderTimelineSvg", () => {
     assert.match(svg, /text-anchor="start".*17:25/);
     assert.match(svg, /text-anchor="end".*17:40/);
     assert.match(svg, /y="69"/);
-    // Tallest bar ends at plot bottom (4 + 52), above the label band.
-    assert.match(svg, /y="30\.0" width="116\.7" height="26\.0"/);
+    // Full-width bars: first column starts at 0, three columns × 400/3 wide.
+    assert.match(svg, /<rect class="measurement" x="0\.0" y="[^"]+" width="133\.3"/);
+    assert.match(svg, /<rect class="forecast" x="266\.7" y="[^"]+" width="133\.3"/);
   });
 });

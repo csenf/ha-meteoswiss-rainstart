@@ -6,6 +6,7 @@
       - scripts/dev-version.sh
     chdir: "{{ meteoswiss_rainstart_repo_root }}"
   delegate_to: localhost
+  become: false
   register: meteoswiss_rainstart_dev_version
   changed_when: false
   when: meteoswiss_rainstart_version | length == 0

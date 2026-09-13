@@ -1,12 +1,12 @@
 # custom_component_ha_meteoswiss_rainstart
 
-Deploys the MeteoSwiss Rain-Start integration to a Home Assistant host from an
-orchestrator submodule checkout.
+Deploys the MeteoSwiss Rain-Start integration to a Home Assistant host from this
+repository (inverted Ansible layout).
 
 ## What it does
 
 1. Rsyncs `custom_components/meteoswiss_rainstart/` to the HA config directory
-2. Resolves the release version from CI input or `git describe`
+2. Resolves the version from CI input or `scripts/dev-version.sh`
 3. Writes the version into `manifest.json` (what Home Assistant displays)
 4. Restarts Home Assistant when `meteoswiss_rainstart_ha_restart_command` is set
 

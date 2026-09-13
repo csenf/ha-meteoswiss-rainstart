@@ -1,37 +1,19 @@
 ---
-# Manual redeploy only — push-to-main deploy runs from ci.yml after tests pass.
+# Manual redeploy of a tagged release. Checks out v<version> when provided.
 name: Deploy via Ansible (manual)
-env:
-  APP_NAME: ha-meteoswiss-rainstart
+
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: Semver tag to deploy (e.g. 0.10.0 or v0.10.0). Leave empty to deploy the current branch.
+        required: false
+        type: string
+        default: ''
 
 jobs:
-  trigger-update-and-deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger orchestrator deploy workflow
-        env:
-          ANSIBLE_DISPATCH_URL: ${{ secrets.ANSIBLE_DISPATCH_URL }}
-          ANSIBLE_REPO_TOKEN: ${{ secrets.ANSIBLE_REPO_TOKEN }}
-        run: |
-          set -euo pipefail
-          if [ -z "${ANSIBLE_DISPATCH_URL}" ] || [ -z "${ANSIBLE_REPO_TOKEN}" ]; then
-            echo "Ansible dispatch secrets not set; skip."
-            exit 0
-          fi
-          http_code=$(curl -s -o /tmp/deploy-response.txt -w "%{http_code}" \
-            -X POST \
-            -H "Content-Type: application/json" \
-            -H "Authorization: token ${{ secrets.ANSIBLE_REPO_TOKEN }}" \
-            "${ANSIBLE_DISPATCH_URL}" \
-            -d '{
-              "ref": "master",
-              "inputs": {
-                "app": "${{ env.APP_NAME }}",
-                "containerState": "started"
-              }
-            }')
-          echo "HTTP ${http_code}"
-          cat /tmp/deploy-response.txt
-          test "${http_code}" = "204" -o "${http_code}" = "200"
+  deploy:
+    uses: ./.gitea/workflows/deploy.yml
+    secrets: inherit
+    with:
+      version: ${{ inputs.version }}

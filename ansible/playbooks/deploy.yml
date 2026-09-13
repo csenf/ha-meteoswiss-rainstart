@@ -1,0 +1,8 @@
+---
+- name: homeassistant meteoswiss rainstart
+  hosts: hass
+
+  roles:
+    - role: custom_component_ha_meteoswiss_rainstart
+      tags:
+        - custom_component_ha_meteoswiss_rainstart

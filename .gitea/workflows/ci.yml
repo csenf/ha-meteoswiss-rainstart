@@ -1,7 +1,5 @@
-# Test on every push/PR. Do not tag or create GitHub Releases here.
-# Optional secrets on private Gitea (not GitHub):
-#   ANSIBLE_DISPATCH_URL — workflow dispatch URL for your private orchestrator
-#   ANSIBLE_REPO_TOKEN   — token allowed to trigger that workflow
+# Test on every push/PR. Deploy runs from release.yml on tag push (not on main).
+# Gitea does not run ci-tag-release.sh — public tags come from GitHub / Promote workflow.
 name: CI / Test
 run-name: ${{ gitea.event.head_commit.message }}
 
@@ -35,6 +33,15 @@ jobs:
       - name: Run frontend card model tests
         run: node --test tests/frontend/test_rainstart_card_model.mjs
 
+      - name: Checkout ansible control plane
+        if: gitea.event_name == 'push' && gitea.ref == 'refs/heads/main'
+        uses: actions/checkout@v4
+        with:
+          repository: csenf/ansible
+          ref: master
+          path: control-plane
+          token: ${{ secrets.ANSIBLE_REPO_TOKEN }}
+
       - name: Shell syntax check
         run: |
           bash -n scripts/ci-tag-release.sh
@@ -45,28 +52,5 @@ jobs:
           bash -n scripts/reachable-semver-tags.sh
           bash -n scripts/sync-from-github.sh
           bash -n scripts/wait-for-github.sh
-
-  dispatch-ansible:
-    name: Dispatch Ansible deploy
-    runs-on: ubuntu-latest
-    needs: test
-    if: gitea.event_name == 'push' && gitea.ref == 'refs/heads/main'
-    steps:
-      - name: Trigger Ansible if secrets are set
-        env:
-          ANSIBLE_DISPATCH_URL: ${{ secrets.ANSIBLE_DISPATCH_URL }}
-          ANSIBLE_REPO_TOKEN: ${{ secrets.ANSIBLE_REPO_TOKEN }}
-        run: |
-          set -euo pipefail
-          if [ -z "${ANSIBLE_DISPATCH_URL}" ] || [ -z "${ANSIBLE_REPO_TOKEN}" ]; then
-            echo "Ansible dispatch secrets not set; skip."
-            exit 0
-          fi
-          http_code=$(curl -s -o /tmp/deploy-response.txt -w "%{http_code}" \
-            -X POST \
-            -H "Content-Type: application/json" \
-            -H "Authorization: token ${ANSIBLE_REPO_TOKEN}" \
-            "${ANSIBLE_DISPATCH_URL}" \
-            -d '{"ref":"master","inputs":{"app":"ha-meteoswiss-rainstart","containerState":"started"}}')
-          echo "HTTP ${http_code}"
-          test "${http_code}" = "204" -o "${http_code}" = "200"
+          bash -n scripts/ansible-deploy.sh
+          bash -n scripts/_ansible_common.sh

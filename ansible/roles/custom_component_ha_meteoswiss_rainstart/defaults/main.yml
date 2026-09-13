@@ -3,7 +3,7 @@
 meteoswiss_rainstart_install_dir: /config/custom_components/meteoswiss_rainstart
 # Optional semver override (CI may pass -e meteoswiss_rainstart_version=X.Y.Z).
 meteoswiss_rainstart_version: ""
-# Submodule checkout root (roles/ha-meteoswiss-rainstart).
+# App checkout root (CI and ansible-deploy.sh pass -e meteoswiss_rainstart_repo_root=…).
 meteoswiss_rainstart_repo_root: "{{ role_path }}/../../.."
 meteoswiss_rainstart_component_src: >-
   {{ meteoswiss_rainstart_repo_root }}/custom_components/meteoswiss_rainstart

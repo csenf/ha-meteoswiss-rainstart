@@ -1,36 +1,47 @@
 # Ansible deployment
 
-Ansible role for deploying this integration to Home Assistant through a **private**
-orchestrator repository. Hostnames, SSH keys, inventory, and workflow URLs belong
-there — not in this repo.
+This repo owns the deploy playbook, Ansible role, and integration source.
+The [ansible orchestrator](https://git.qwsd.de/csenf/ansible) supplies inventory
+only (`hass` group → `homeassistant.local`, SSH as root).
 
-## Role
+## Deploy
 
-| Role | Purpose |
-|------|---------|
-| `custom_component_ha_meteoswiss_rainstart` | Rsync integration files, stamp `manifest.json`, optional HA restart |
+Clone both repos as siblings (`~/Developer/ansible` + `~/Developer/ha-meteoswiss-rainstart`):
 
-## Orchestrator integration
+```bash
+./scripts/ansible-deploy.sh
+```
 
-Your orchestrator typically:
+Optional: `METEOSWISS_RAINSTART_VERSION=1.2.3 ./scripts/ansible-deploy.sh`  
+Local dev version (no override): uses `scripts/dev-version.sh` → `x.y.z+dev.gSHA` on the HA copy.
 
-- Mounts this repository as a git submodule
-- Adds `ansible/roles` from this tree to `roles_path`
-- Keeps inventory, vault, and playbooks in the orchestrator repo
+Host overrides: `inventories/host_vars/homeassistant.local/vars.yml` in the ansible repo
+(`meteoswiss_rainstart_install_dir`, `meteoswiss_rainstart_ha_restart_command`).
 
-See your orchestrator's own docs for paths and host names.
+## Layout
 
-## Push-to-deploy (private forge only)
+```text
+ansible/
+├── playbooks/deploy.yml
+└── roles/custom_component_ha_meteoswiss_rainstart/
+```
 
-On the **private** copy of this repository, CI can dispatch a deploy after tests.
-Set repository secrets in your forge UI — do not commit URLs or tokens:
+## CI deploy
+
+**Gitea `main`:** tests only (no auto-tag — public semver tags live on GitHub).
+
+When a **`v*.*.*` tag** exists on this repo (e.g. after **Promote to GitHub** syncs back),
+`release.yml` runs tests then deploys **from that tag** via `.gitea/workflows/deploy.yml`.
+
+Manual redeploy: **Deploy via Ansible (manual)**, optional version input.
+
+## Gitea secrets (deploy)
 
 | Secret | Purpose |
 |--------|---------|
-| `ANSIBLE_REPO_TOKEN` | Token allowed to trigger the orchestrator deploy workflow |
-| `ANSIBLE_DISPATCH_URL` | Workflow dispatch endpoint for the orchestrator |
+| `ANSIBLE_REPO_TOKEN` | Clone private ansible repo in CI |
+| `HA_SSH_KEY` | SSH deploy key for Home Assistant |
+| `ANSIBLE_VAULT_PASSWORD` | If vault vars are added later |
+| `SSH_KNOWN_HOSTS` | Optional; CI also runs `ssh-keyscan homeassistant.local` |
 
-The public GitHub mirror should run tests only and must not hold these secrets.
-
-Manual redeploy: use the **Deploy via Ansible (manual)** workflow on private Gitea,
-if configured.
+Promote / GitHub mirror secrets (`GH_DEPLOY_KEY`, etc.) are separate — see root `AGENTS.md`.

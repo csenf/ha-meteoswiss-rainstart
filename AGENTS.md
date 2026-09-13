@@ -32,9 +32,12 @@
   and tag land on Gitea.
 - GitHub Actions runs `scripts/ci-tag-release.sh` on `main` and publishes
   a Release. It does not push to Gitea.
-- Gitea Actions must not run `scripts/ci-tag-release.sh`.
+- Gitea Actions must not run `scripts/ci-tag-release.sh` on `main`.
 - Do not commit `VERSION`. Ansible / `scripts/deploy.sh` may stamp a
   local-only `x.y.z+dev.gSHA` from `scripts/dev-version.sh` onto the HA copy.
+- Deploy on **tag push** via `release.yml` → `.gitea/workflows/deploy.yml` (not orchestrator submodule).
+- Local deploy: `./scripts/ansible-deploy.sh` (inventory in `../ansible`).
+- Gitea deploy secrets: `ANSIBLE_REPO_TOKEN`, `HA_SSH_KEY`, `ANSIBLE_VAULT_PASSWORD`, `SSH_KNOWN_HOSTS`.
 
 ## [BRANCHES]
 - Use `feature/<issue-description>`, `fix/<issue-description>`, or

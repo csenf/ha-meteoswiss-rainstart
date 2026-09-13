@@ -1,0 +1,102 @@
+---
+# Reusable Ansible deploy. Call from release.yml (tag push) or manual workflow_dispatch.
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Semver tag to deploy (with or without v prefix). Required for tag-based deploys.
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Resolve deploy ref
+        id: deploy_ref
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [ -n "${VERSION}" ]; then
+            ver="${VERSION#v}"
+            echo "ref=v${ver}" >> "$GITHUB_OUTPUT"
+            echo "version=${ver}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=${GITHUB_REF}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout application
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.deploy_ref.outputs.ref }}
+          fetch-depth: 0
+
+      - name: Checkout ansible control plane
+        uses: actions/checkout@v4
+        with:
+          repository: csenf/ansible
+          ref: master
+          path: control-plane
+          token: ${{ secrets.ANSIBLE_REPO_TOKEN }}
+
+      - name: Prepare SSH known hosts
+        run: |
+          install -m 700 -d ~/.ssh
+          {
+            printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}"
+            ssh-keyscan -T 2 -H homeassistant.local 2>/dev/null || true
+          } > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Write deploy ansible config
+        run: |
+          cfg="${RUNNER_TEMP}/meteoswiss-deploy.cfg"
+          cat > "${cfg}" <<EOF
+          [defaults]
+          roles_path = ${GITHUB_WORKSPACE}/ansible/roles
+          retry_files_enabled = False
+
+          [ssh_connection]
+          pipelining = True
+          ssh_args = -o ControlMaster=auto -o ControlPersist=120s -o ConnectTimeout=30
+          timeout = 30
+          EOF
+          echo "ANSIBLE_CONFIG=${cfg}" >> "$GITHUB_ENV"
+
+      - name: Build ansible options
+        env:
+          VERSION: ${{ steps.deploy_ref.outputs.version }}
+        run: |
+          opts="--inventory ${GITHUB_WORKSPACE}/control-plane/inventories/all.yml -b --tags custom_component_ha_meteoswiss_rainstart"
+          opts="$opts -e meteoswiss_rainstart_repo_root=${GITHUB_WORKSPACE}"
+          if [ -n "${VERSION}" ]; then
+            opts="$opts -e meteoswiss_rainstart_version=${VERSION}"
+          fi
+          echo "ANSIBLE_OPTIONS=${opts}" >> "$GITHUB_ENV"
+
+      - name: Install rsync for synchronize module
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq rsync
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Ansible
+        run: pip install ansible
+
+      - name: Run playbook
+        uses: dawidd6/action-ansible-playbook@v4
+        with:
+          playbook: ansible/playbooks/deploy.yml
+          directory: ./
+          key: ${{ secrets.HA_SSH_KEY }}
+          vault_password: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+          requirements: ansible/galaxy-requirements.yml
+          options: ${{ env.ANSIBLE_OPTIONS }}

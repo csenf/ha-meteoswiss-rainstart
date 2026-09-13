@@ -414,11 +414,16 @@ class MeteoSwissRainStartCard extends HTMLElement {
       : "";
     const stats = model.stats.length
       ? `<div class="stats">${model.stats
-          .map(
-            (item) =>
-              `<div class="stat"><span class="stat-value">${escapeHtml(item.value)}</span>` +
-              `<span class="stat-label">${escapeHtml(item.label)}</span></div>`,
-          )
+          .map((item) => {
+            const title = item.title
+              ? ` title="${escapeHtml(item.title)}"`
+              : "";
+            return (
+              `<div class="stat"${title}>` +
+              `<span class="stat-value">${escapeHtml(item.value)}</span>` +
+              `<span class="stat-label">${escapeHtml(item.label)}</span></div>`
+            );
+          })
           .join("")}</div>`
       : "";
 

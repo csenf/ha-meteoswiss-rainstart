@@ -63,6 +63,21 @@ function formatMinutes(value) {
   return `${Math.round(value)} min`;
 }
 
+/** How old the newest radar measurement frame is (not time until next HA poll). */
+function formatRadarDataAge(value) {
+  if (value == null) {
+    return null;
+  }
+  const minutes = Math.round(value);
+  if (minutes <= 0) {
+    return "now";
+  }
+  if (minutes === 1) {
+    return "1 min ago";
+  }
+  return `${minutes} min ago`;
+}
+
 function formatRate(value) {
   if (value == null) {
     return null;
@@ -195,7 +210,14 @@ export function buildCardViewModel({ entityIds, states }) {
   const stats = [
     precipitation != null ? { label: "Now", value: formatRate(precipitation) } : null,
     rainEnd != null ? { label: "Ends", value: formatMinutes(rainEnd) } : null,
-    dataAge != null ? { label: "Radar", value: formatMinutes(dataAge) } : null,
+    dataAge != null
+      ? {
+          label: "Radar data",
+          value: formatRadarDataAge(dataAge),
+          title:
+            "How long ago the newest MeteoSwiss radar frame was observed (not when Home Assistant last fetched).",
+        }
+      : null,
   ].filter(Boolean);
 
   return {

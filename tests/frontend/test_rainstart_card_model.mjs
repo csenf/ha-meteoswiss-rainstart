@@ -74,7 +74,12 @@ describe("buildCardViewModel", () => {
     assert.deepEqual(model.stats, [
       { label: "Now", value: "0 mm/h" },
       { label: "Ends", value: "45 min" },
-      { label: "Radar", value: "8 min" },
+      {
+        label: "Radar data",
+        value: "8 min ago",
+        title:
+          "How long ago the newest MeteoSwiss radar frame was observed (not when Home Assistant last fetched).",
+      },
     ]);
     assert.equal(model.timeline.length, 2);
   });

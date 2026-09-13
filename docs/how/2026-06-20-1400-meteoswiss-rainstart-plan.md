@@ -385,11 +385,11 @@ deactivate auto
 ```
 
 Trigger: `numeric_state` on sensor, `above: 0`, `below: 11`.  
-Condition: `binary_sensor.any_window_open` (group contacts `binary_sensor.0xc4d8c8fffeafa6bb_contact`, `binary_sensor.0x08b95ffffe4a2807_contact` — `on` = open).  
-Actions: `notify.mobile_app_iphone_16_pro_von_carsten`, `notify.telegram`.  
+Condition: `binary_sensor.any_window_open` (group of contact sensors — `on` = open).  
+Actions: your mobile app notify service and optional `notify.telegram` (examples below).  
 Spam control: start with `mode: single`; add `input_boolean` helper if duplicates occur.
 
-Replace or disable existing automation `Notify when rain is about to start` (id `1778493348393`) — **still required manually**; legacy template references `precipitation_probability` which the weather entity no longer exposes.
+Replace or disable any legacy “rain about to start” automation — **still required manually**; old templates may reference `precipitation_probability` which the weather entity no longer exposes.
 
 Suggested replacement (add to `automations.yaml`, disable id `1778493348393`):
 
@@ -406,12 +406,12 @@ Suggested replacement (add to `automations.yaml`, disable id `1778493348393`):
     entity_id: binary_sensor.any_window_open
     state: "on"
   actions:
-  - action: notify.mobile_app_iphone_16_pro_von_carsten
+  - action: notify.mobile_app_your_phone
     data:
-      message: Regen in Kuerze
+      message: Rain expected soon — close windows
   - action: notify.telegram
     data:
-      message: Regen warnung
+      message: Rain warning — close windows
   mode: single
 ```
 

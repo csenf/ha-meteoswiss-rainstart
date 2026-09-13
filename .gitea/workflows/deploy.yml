@@ -38,17 +38,21 @@ jobs:
       - name: Checkout ansible control plane
         uses: actions/checkout@v4
         with:
-          repository: csenf/ansible
+          repository: ${{ vars.ANSIBLE_CONTROL_REPOSITORY }}
           ref: master
           path: control-plane
           token: ${{ secrets.ANSIBLE_REPO_TOKEN }}
 
       - name: Prepare SSH known hosts
+        env:
+          HA_SSH_HOST: ${{ vars.HA_SSH_HOST }}
         run: |
           install -m 700 -d ~/.ssh
           {
             printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}"
-            ssh-keyscan -T 2 -H homeassistant.local 2>/dev/null || true
+            if [ -n "${HA_SSH_HOST}" ]; then
+              ssh-keyscan -T 2 -H "${HA_SSH_HOST}" 2>/dev/null || true
+            fi
           } > ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 

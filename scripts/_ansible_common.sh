@@ -19,7 +19,7 @@ meteoswiss_init_paths() {
 meteoswiss_require_control_plane() {
   if [[ ! -f "${ANSIBLE_ROOT}/inventories/all.yml" ]]; then
     echo "ansible inventory not found at ANSIBLE_ROOT=${ANSIBLE_ROOT}" >&2
-    echo "Clone csenf/ansible beside this repo or set ANSIBLE_ROOT." >&2
+    echo "Clone your private ansible inventory repo beside this repo or set ANSIBLE_ROOT." >&2
     exit 1
   fi
 }

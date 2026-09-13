@@ -36,8 +36,9 @@
 - Do not commit `VERSION`. Ansible / `scripts/deploy.sh` may stamp a
   local-only `x.y.z+dev.gSHA` from `scripts/dev-version.sh` onto the HA copy.
 - Deploy on **tag push** via `release.yml` → `.gitea/workflows/deploy.yml` (not orchestrator submodule).
-- Local deploy: `./scripts/ansible-deploy.sh` (inventory in `../ansible`).
+- Local deploy: `./scripts/ansible-deploy.sh` (private inventory repo via `ANSIBLE_ROOT`).
 - Gitea deploy secrets: `ANSIBLE_REPO_TOKEN`, `HA_SSH_KEY`, `ANSIBLE_VAULT_PASSWORD`, `SSH_KNOWN_HOSTS`.
+- Gitea repo variables (private forge only): `ANSIBLE_CONTROL_REPOSITORY`, `HA_SSH_HOST`.
 
 ## [BRANCHES]
 - Use `feature/<issue-description>`, `fix/<issue-description>`, or

@@ -37,7 +37,7 @@ jobs:
         if: gitea.event_name == 'push' && gitea.ref == 'refs/heads/main'
         uses: actions/checkout@v4
         with:
-          repository: csenf/ansible
+          repository: ${{ vars.ANSIBLE_CONTROL_REPOSITORY }}
           ref: master
           path: control-plane
           token: ${{ secrets.ANSIBLE_REPO_TOKEN }}

@@ -1,12 +1,12 @@
 # Ansible deployment
 
 This repo owns the deploy playbook, Ansible role, and integration source.
-The [ansible orchestrator](https://git.qwsd.de/csenf/ansible) supplies inventory
-only (`hass` group → `homeassistant.local`, SSH as root).
+A **private** Ansible inventory repository (not published with this GitHub mirror)
+supplies host vars and the `hass` inventory group.
 
 ## Deploy
 
-Clone both repos as siblings (`~/Developer/ansible` + `~/Developer/ha-meteoswiss-rainstart`):
+Clone this repo beside your private inventory checkout and set `ANSIBLE_ROOT` if needed:
 
 ```bash
 ./scripts/ansible-deploy.sh
@@ -15,8 +15,8 @@ Clone both repos as siblings (`~/Developer/ansible` + `~/Developer/ha-meteoswiss
 Optional: `METEOSWISS_RAINSTART_VERSION=1.2.3 ./scripts/ansible-deploy.sh`  
 Local dev version (no override): uses `scripts/dev-version.sh` → `x.y.z+dev.gSHA` on the HA copy.
 
-Host overrides: `inventories/host_vars/homeassistant.local/vars.yml` in the ansible repo
-(`meteoswiss_rainstart_install_dir`, `meteoswiss_rainstart_ha_restart_command`).
+Host overrides live in your inventory repo under `inventories/host_vars/<ha-host>/vars.yml`
+(e.g. `meteoswiss_rainstart_install_dir`, `meteoswiss_rainstart_ha_restart_command`).
 
 ## Layout
 
@@ -42,6 +42,9 @@ Manual redeploy: **Deploy via Ansible (manual)**, optional version input.
 | `ANSIBLE_REPO_TOKEN` | Clone private ansible repo in CI |
 | `HA_SSH_KEY` | SSH deploy key for Home Assistant |
 | `ANSIBLE_VAULT_PASSWORD` | If vault vars are added later |
-| `SSH_KNOWN_HOSTS` | Optional; CI also runs `ssh-keyscan homeassistant.local` |
+| `SSH_KNOWN_HOSTS` | Optional; CI may run `ssh-keyscan` when `HA_SSH_HOST` repo variable is set |
+
+On **private Gitea**, set repository variables (not committed): `ANSIBLE_CONTROL_REPOSITORY`
+(owner/name of the inventory repo), `HA_SSH_HOST` (SSH hostname for Home Assistant).
 
 Promote / GitHub mirror secrets (`GH_DEPLOY_KEY`, etc.) are separate — see root `AGENTS.md`.

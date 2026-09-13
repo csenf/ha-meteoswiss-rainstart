@@ -18,5 +18,5 @@ repository (inverted Ansible layout).
 | `meteoswiss_rainstart_version` | `""` | Optional semver override |
 | `meteoswiss_rainstart_ha_restart_command` | `ha core restart` | Set to `""` to skip restart |
 
-Host-specific paths and restart commands are set in the orchestrator inventory,
-not in this repository.
+Host-specific paths and restart commands are set in your private Ansible inventory
+(`ANSIBLE_ROOT`, e.g. `inventories/host_vars/…`), not in this repository.

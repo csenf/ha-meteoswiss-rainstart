@@ -88,7 +88,13 @@ python3 -m venv .venv
 .venv/bin/pytest tests/ -m 'not integration'
 ```
 
-To copy the integration into a local Home Assistant config:
+To deploy to Home Assistant (Ansible + private inventory):
+
+```bash
+./scripts/ansible-deploy.sh
+```
+
+See [ansible/README.md](ansible/README.md). For a direct rsync without inventory:
 
 ```bash
 ./scripts/deploy.sh /path/to/homeassistant/custom_components/meteoswiss_rainstart

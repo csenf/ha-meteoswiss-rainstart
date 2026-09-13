@@ -34,6 +34,6 @@
       - meteoswiss_rainstart_resolved_version is defined
       - meteoswiss_rainstart_resolved_version | length > 0
     fail_msg: >-
-      Set meteoswiss_rainstart_version via workflow input (-e meteoswiss_rainstart_version=X.Y.Z)
-      or ensure scripts/dev-version.sh succeeds in the submodule checkout (manifest.json base
-      version and git tags required).
+      Set meteoswiss_rainstart_version via workflow input or -e meteoswiss_rainstart_version=X.Y.Z
+      or ensure scripts/dev-version.sh succeeds in meteoswiss_rainstart_repo_root (manifest.json
+      base version and git tags required).

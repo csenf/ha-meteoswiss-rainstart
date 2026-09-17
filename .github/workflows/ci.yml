@@ -1,7 +1,7 @@
 # Test on every push/PR. On main: stamp manifest.json, SemVer tag, and
 # publish a GitHub Release (HACS uses the release; HA reads the stamp).
 name: CI / Test & Tag
-run-name: ${{ github.event.head_commit.message || format('Manual: {0}', github.ref_name) }}
+run-name: "${{ github.event_name == 'workflow_dispatch' && format('Manual run on {0}', github.ref_name) || github.event.head_commit.message }}"
 
 on:
   push:

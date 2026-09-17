@@ -1,7 +1,7 @@
 # Test on every push/PR. On main: stamp manifest.json, SemVer tag, and
 # publish a GitHub Release (HACS uses the release; HA reads the stamp).
 name: CI / Test & Tag
-run-name: ${{ github.event.head_commit.message }}
+run-name: ${{ github.event.head_commit.message || format('Manual: {0}', github.ref_name) }}
 
 on:
   push:
@@ -10,6 +10,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   test:
@@ -48,7 +49,7 @@ jobs:
     name: Tag release
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     permissions:
       contents: write
     steps:
